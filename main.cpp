@@ -4,7 +4,7 @@
 
 int main()
 {
-	int queen_nb = 30;
+	int queen_nb = 6;
 
 	cout << "Starting ..." << endl;
 	std::clock_t start;
@@ -12,12 +12,23 @@ int main()
 
 	start = std::clock();
 	ConstraintProblem pb_test(queen_nb);
-	vector<int> solution = pb_test.backtrackSolve();
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-	cout << "Duration : " << duration << " seconds" << endl;;
+	cout << "Construction duration : " << duration << " seconds" << endl;;
 	cout << endl;
 
+	start = std::clock();
+	pb_test.initializationAC4();
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	cout << "Arc consistency duration : " << duration << " seconds" << endl;;
+	cout << endl;
 
+	start = std::clock();
+	vector<int> solution = pb_test.backtrackSolve();
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	cout << "Backtrack duration : " << duration << " seconds" << endl;;
+	cout << endl;
+
+	// Displaying the solution
 	cout << "Solution : ";
 	for (auto it : solution)
 	{
