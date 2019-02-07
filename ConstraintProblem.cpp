@@ -4,9 +4,12 @@
 ConstraintProblem::ConstraintProblem()
 {
 	var_nb = 0;
+	domain_bound = 0;
 	var_domains = vector<vector<int> >();
-	constraints = vector<vector<pair<int, int> > >();
+	constraints = vector<vector<bool> >();
+	inconsistent_instantiation = false;
 	instantiated_vars = vector<bool>();
+
 	deleted_values = vector<pair<int, int> >();
 	support_count = map<tuple<int, int, int>, int>();
 	support_values = map < pair<int, int>, vector<pair<int, int> > >();
@@ -15,6 +18,8 @@ ConstraintProblem::ConstraintProblem()
 ConstraintProblem::ConstraintProblem(int const & n)
 {
 	var_nb = n;
+	domain_bound = n;
+	inconsistent_instantiation = false;
 	instantiated_vars = vector<bool>(var_nb, false);
 	deleted_values = vector<pair<int, int> >();
 	support_count = map<tuple<int, int, int>, int>();
@@ -28,14 +33,14 @@ ConstraintProblem::ConstraintProblem(int const & n)
 			var_domains[i].push_back(j);
 		}
 	}
-	constraints = vector<vector<pair<int, int> > >();
+	constraints = vector<vector<bool> >();
 	// Constructing constraints
 	bool accepted_values = false;
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < n; j++)
 		{
-			constraints.push_back(vector<pair<int, int> >());
+			constraints.push_back(vector<bool>(domain_bound*domain_bound, false));
 			if (i != j)
 			{
 				//cout << "size : " << constraints.size() << "  i,j  " << i << " " << j << endl;
@@ -48,7 +53,7 @@ ConstraintProblem::ConstraintProblem(int const & n)
 						accepted_values = (i_value != j_value) && (i + i_value != j + j_value) && (i - i_value != j - j_value);
 						if (accepted_values)
 						{
-							constraints[j + (i * n)].push_back(std::make_pair(i_value, j_value));
+							constraints[(i * n)+j][(i_value*domain_bound)+j_value] = true;
 						}
 					}
 				}
@@ -67,6 +72,15 @@ ConstraintProblem::ConstraintProblem(int const & n)
 
 ConstraintProblem::~ConstraintProblem()
 {
+}
+
+bool ConstraintProblem::checkConstraint(int const & x, int const & y, int const & a, int const & b) const
+{
+	if (a > domain_bound || b > domain_bound)
+	{
+		return false;
+	}
+	return constraints[(x*var_nb)+y][(a*domain_bound)+b];
 }
 
 void ConstraintProblem::addValues(vector<pair<int, int>> const & values_to_add)
@@ -91,56 +105,56 @@ void ConstraintProblem::initializationAC4()
 		{
 			if (var_i != var_j)
 			{
-				for (auto constraint_pair : constraints[(var_i*var_nb) + var_j])
+				int pairs_count = 0;
+				for (vector<int>::iterator value_i_it = var_domains[var_i].begin(); 
+					value_i_it != var_domains[var_i].end(); value_i_it++)
 				{
-					// Incrementing the total count for (var_i, var_j, "value_i")
-					auto count_it = support_count.find(std::make_tuple(var_i, var_j, constraint_pair.first));
-					if (count_it != support_count.end())
+					pairs_count = 0;
+					for (auto value_j : var_domains[var_j])
 					{
-						count_it->second += 1;
+						if (checkConstraint(var_i, var_j, *value_i_it, value_j))
+						{
+							// The pair (value_i, value_j) is acceptable for the variables (var_i, var_j)
+							pairs_count++;
+							// Adding a value to the support of (var_j, value_j)
+							auto support_it = support_values.find(std::make_pair(var_j, value_j));
+							if (support_it != support_values.end())
+							{
+								support_it->second.push_back(std::make_pair(var_i, *value_i_it));
+							}
+							else
+							{
+								support_values[std::make_pair(var_j, value_j)]
+									= vector<pair<int, int> >(1, std::make_pair(var_i, *value_i_it));
+							}
+						}
+					}
+					if (pairs_count == 0)
+					{
+						//cout << "Deleting val " << *value_i_it << " with var " << var_i << " because of var " << var_j << endl;
+						deleted_values.push_back(std::make_pair(var_i, *value_i_it));
+						var_domains[var_i].erase(value_i_it);
+						value_i_it--;
+						if (var_domains[var_i].size() == 0)
+						{
+							inconsistent_instantiation = true;
+							return;
+						}
 					}
 					else
 					{
-						support_count[std::make_tuple(var_i, var_j, constraint_pair.first)] = 1;
-					}
-
-					// Adding a value to the support of (var_j, "value_j")
-					auto support_it = support_values.find(std::make_pair(var_j, constraint_pair.second));
-					if (support_it != support_values.end())
-					{
-						support_it->second.push_back(std::make_pair(var_i, constraint_pair.first));
-					}
-					else
-					{
-						support_values[std::make_pair(var_j, constraint_pair.second)] 
-							= vector<pair<int, int> >(1, std::make_pair(var_i, constraint_pair.first));
-					}
-				}
-
-				// Possible to optimize here by swapping the element to delete with the back element before deletion
-				// Dangerous manipulation though, be cautious
-				for (vector<int>::iterator value_it= var_domains[var_i].begin();
-					value_it != var_domains[var_i].end(); value_it++)
-				{
-					auto count_it = support_count.find(std::make_tuple(var_i, var_j, *value_it));
-					if (count_it == support_count.end())
-					{
-						cout << "Deleting value " << *value_it << " from the domain of variable " << var_i << endl;
-						deleted_values.push_back(std::make_pair(var_i, *value_it));
-						var_domains[var_i].erase(value_it);
-						value_it--;
+						support_count[std::make_tuple(var_i, var_j, *value_i_it)] = pairs_count;
 					}
 				}
 			}
 		}
 	}
-	cout << "oui : " << support_count.size() << "  " << support_values.size() << endl;
 }
 
 vector<pair<int, int> > ConstraintProblem::AC4()
 {
 	vector<pair<int, int> > all_deleted_values = deleted_values;
-	cout << "SIZE : " << deleted_values.size() << endl;
+	//cout << "SIZE : " << deleted_values.size() << endl;
 	while (deleted_values.size() > 0)
 	{
 		// Popping the last deleted value out of the container
@@ -153,7 +167,7 @@ vector<pair<int, int> > ConstraintProblem::AC4()
 			for (auto paired_value : paired_value_vect_it->second)
 			{
 				// Making sure the paired variable is not instantiated yet, it is useless otherwise
-				if (not instantiated_vars[paired_value.first])
+				if (true)//not instantiated_vars[paired_value.first])
 				{
 					support_count[std::make_tuple(paired_value.first, deleted_pair.first, paired_value.second)] += -1;
 					// If the paired value has no support value left : propagate
@@ -168,8 +182,13 @@ vector<pair<int, int> > ConstraintProblem::AC4()
 							deleted_values.push_back(paired_value);
 							// Keeping all the deleted values to add them back in case the backtrack goes back
 							all_deleted_values.push_back(paired_value);
+							if (var_domains[paired_value.first].size() == 0)
+							{
+								inconsistent_instantiation = true;
+								return all_deleted_values;
+							}
 
-							cout << "Deleted value " << paired_value.first << "," << paired_value.second << endl;
+							//cout << "Deleted value with propagation " << paired_value.first << "," << paired_value.second << endl;
 						}
 					}
 				}
@@ -178,7 +197,7 @@ vector<pair<int, int> > ConstraintProblem::AC4()
 		}
 		else
 		{
-			cout << deleted_pair.first << "," << deleted_pair.second << "n'a aucune valeur support" << endl;
+			//cout << deleted_pair.first << "," << deleted_pair.second << "n'a aucune valeur support" << endl;
 		}
 	}
 
@@ -192,13 +211,11 @@ vector<int> ConstraintProblem::backtrackSolve()
 	{
 		visit_order_vect.push_back(idx);
 	}
+
 	vector<int> former_var_domain = var_domains[visit_order_vect[0]];
 	for (auto domain_value : former_var_domain)
 	{
 		var_domains[visit_order_vect[0]] = vector<int>(1, domain_value);
-	//for (vector<int>::iterator value_it = var_domains[visit_order_vect[0]].begin();
-	//	value_it != var_domains[visit_order_vect[0]].end(); value_it++)
-	//{
 		instantiated_vars[visit_order_vect[0]] = true;
 		vector<int> instantiation(1, domain_value);
 		if (recursiveBacktrack(visit_order_vect, 0, instantiation))
@@ -215,19 +232,18 @@ vector<int> ConstraintProblem::backtrackSolve()
 bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect, int const & var_idx, vector<int> & partial_instantiation)
 {
 	// WARNING : pay attention to the var indices, different from the vect indices
-	cout << "Exploring var idx " << var_idx << " with value " << partial_instantiation.back() << endl;
+	
+	//cout << "Exploring var idx " << var_idx << " with value " << partial_instantiation.back() << endl;
 
 	// Checks if the partial instantiation is correct, more precisely if the last added value does not create conflicts
 	vector<pair<int, int> >::iterator pair_it;
 	for (int vect_idx = 0; vect_idx < var_idx; vect_idx++)
 	{
-		// The elements in the pair are not commutative, pay attention to that
-		pair_it = find(constraints[visit_order_vect[vect_idx] + (visit_order_vect[var_idx] * var_nb)].begin(),
-					  constraints[visit_order_vect[vect_idx] + (visit_order_vect[var_idx] * var_nb)].end(),
-					  make_pair(partial_instantiation[var_idx], partial_instantiation[vect_idx]));
-		if (pair_it == constraints[visit_order_vect[vect_idx] + (visit_order_vect[var_idx] * var_nb)].end())
+		bool constraint_respected = checkConstraint(visit_order_vect[var_idx], visit_order_vect[vect_idx],
+			partial_instantiation[var_idx], partial_instantiation[vect_idx]);
+		if (not constraint_respected)
 		{
-			// Did not find the right pair in the constraints, the partial solution is not legit
+			// The partial solution is not legit
 			return false;
 		}
 	}
@@ -247,29 +263,56 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect,
 		return true;
 	}
 
+	//for (int idx_1 = 0; idx_1 < var_domains.size(); idx_1++)
+	//{
+	//	cout << "befor domain var " << idx_1 << " : ";
+	//	for (auto it_2 : var_domains[idx_1])
+	//	{
+	//		cout << it_2 << "  ";
+	//	}
+	//	cout << endl;
+	//}
+
 	vector<pair<int, int> > ac_deleted_values;
 	if (true)
 	{
 		initializationAC4();
+		if (inconsistent_instantiation)
+		{
+			inconsistent_instantiation = false;
+			addValues(deleted_values);
+			return false;
+		}
 		ac_deleted_values = AC4();
-
-		cout << "valeurs suppr : " << visit_order_vect[var_idx] << " : " << partial_instantiation.back() << endl;
-		for (auto pair_it : ac_deleted_values)
+		if (inconsistent_instantiation)
 		{
-			cout << pair_it.first << "  " << pair_it.second << endl;
+			inconsistent_instantiation = false;
+			addValues(ac_deleted_values);
+			return false;
 		}
-		cout << "fin val suppr" << endl;
+
+		// Verifying each variable not instantiated has at least one value left in its domain
+		//for (int left_var_idx = var_idx + 1; left_var_idx < var_nb; left_var_idx++)
+		//{
+		//	if (var_domains[visit_order_vect[left_var_idx]].size() == 0)
+		//	{
+		//		//cout << "no domain for var : " << visit_order_vect[left_var_idx] << endl;
+		//		addValues(ac_deleted_values);
+		//		return false;
+		//	}
+		//}
+
 	}
 
-	for (int idx_1=0; idx_1<var_domains.size(); idx_1++)
-	{
-		cout << "after domain var " << idx_1 << " : ";
-		for (auto it_2 : var_domains[idx_1])
-		{
-			cout << it_2 << "  ";
-		}
-		cout << endl;
-	}
+	//for (int idx_1=0; idx_1<var_domains.size(); idx_1++)
+	//{
+	//	cout << "after domain var " << idx_1 << " : ";
+	//	for (auto it_2 : var_domains[idx_1])
+	//	{
+	//		cout << it_2 << "  ";
+	//	}
+	//	cout << endl;
+	//}
 
 	// Trying to assign the next variable
 	int explored_idx = var_idx + 1;

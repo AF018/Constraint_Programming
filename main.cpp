@@ -4,7 +4,7 @@
 
 int main()
 {
-	int queen_nb = 6;
+	int queen_nb = 32;
 
 	cout << "Starting ..." << endl;
 	std::clock_t start;

@@ -12,8 +12,11 @@ using namespace std;
 class ConstraintProblem
 {
 	int var_nb;
+	int domain_bound;
 	vector<vector<int> > var_domains;
-	vector<vector<pair<int, int> > > constraints;
+	vector<vector<bool> > constraints;
+	// Elements used during the optimization
+	bool inconsistent_instantiation;
 	vector<bool> instantiated_vars;
 	// Containers for the arc consistency
 	vector<pair<int, int> > deleted_values;
@@ -27,6 +30,8 @@ public:
 	// Default destructor
 	virtual ~ConstraintProblem();
 	
+	// Check if pair (a,b) is acceptable for variables (x,y)
+	bool checkConstraint(int const & x, int const & y, int const & a, int const & b) const;
 	// Add values to the domains
 	void addValues(vector<pair<int, int> > const & values_to_add);
 
