@@ -14,7 +14,7 @@ class ConstraintProblem
 	int domain_bound;
 	vector<vector<int> > var_domains;
 	vector<vector<bool> > constraints;
-	vector<bool> constrained_vars;
+	vector<vector<int> > constrained_vars;
 	// Elements used during the optimization
 	bool inconsistent_instantiation;
 	vector<bool> instantiated_vars;

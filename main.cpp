@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int queen_nb = 40;
-		pb_test.createQueenProblem(queen_nb);
-		//pb_test.createColorationProblem("Instances\\myciel6.col", 7);
+		int queen_nb = 45;
+		//pb_test.createQueenProblem(queen_nb);
+		pb_test.createColorationProblem("Instances\\inithx.i.1.col", 11);
 	}
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 	cout << "Construction duration : " << duration << " seconds" << endl;;
