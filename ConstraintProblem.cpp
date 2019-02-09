@@ -7,15 +7,19 @@ ConstraintProblem::ConstraintProblem()
 	domain_bound = 0;
 	var_domains = vector<vector<int> >();
 	constraints = vector<vector<bool> >();
+	constrained_vars = vector<bool>();
 	inconsistent_instantiation = false;
 	instantiated_vars = vector<bool>();
-
 	deleted_values = vector<pair<int, int> >();
 	support_count = vector<int>();
 	support_values = vector<vector<pair<int, int> > >();
 }
 
-ConstraintProblem::ConstraintProblem(int const & n)
+ConstraintProblem::~ConstraintProblem()
+{
+}
+
+void ConstraintProblem::createQueenProblem(int const & n)
 {
 	var_nb = n;
 	domain_bound = n;
@@ -35,6 +39,7 @@ ConstraintProblem::ConstraintProblem(int const & n)
 		}
 	}
 	constraints = vector<vector<bool> >();
+	constrained_vars = vector<bool>(var_nb*var_nb, false);
 	// Constructing constraints
 	bool accepted_values = false;
 	for (int i = 0; i < n; i++)
@@ -44,8 +49,7 @@ ConstraintProblem::ConstraintProblem(int const & n)
 			constraints.push_back(vector<bool>(domain_bound*domain_bound, false));
 			if (i != j)
 			{
-				//cout << "size : " << constraints.size() << "  i,j  " << i << " " << j << endl;
-				
+				constrained_vars[(i * n) + j] = true;
 				// Filling constraints
 				for (int i_value = 0; i_value < n; i_value++)
 				{
@@ -71,8 +75,85 @@ ConstraintProblem::ConstraintProblem(int const & n)
 	}
 }
 
-ConstraintProblem::~ConstraintProblem()
+void ConstraintProblem::createColorationProblem(string const & filename, int const & color_attempt_nb)
 {
+	ifstream file_reader;
+	file_reader.open(filename);
+
+	if (!file_reader)
+	{
+		cout << "Unable to open : " << filename << endl;
+		// call system to stop
+		exit(1);   
+	}
+
+	int constraint_nb = 0;
+
+	std::string line;
+	bool found_data = false;
+	while ((not found_data) && std::getline(file_reader, line))
+	{
+		if (line[0] == 'p')
+		{
+			found_data = true;
+			size_t pos = 0;
+			std::string delimiter = " ";
+			std::string token;
+			while ((pos = line.find(delimiter)) != std::string::npos) {
+				token = line.substr(0, pos);
+				line.erase(0, pos + delimiter.length());
+			}
+			var_nb = std::stoi(token);
+			constraint_nb = std::stoi(line);
+		}
+	}
+	char readChar;
+	int readInt;
+
+	cout << "val : " << var_nb << " " << constraint_nb << endl;
+
+	// Constructing constraints;
+	constraints = vector<vector<bool> >(var_nb*var_nb, vector<bool>(color_attempt_nb*color_attempt_nb, false));
+	constrained_vars = vector<bool>(var_nb*var_nb, false);
+	int var_i;
+	int var_j;
+	for (int constraint_idx=0; constraint_idx<constraint_nb; constraint_idx++)
+	{
+		file_reader >> readChar >> var_i >> var_j;
+		// Variable values are modified to fit in the interval [0, var_nb-1]
+		var_i = var_i - 1;
+		var_j = var_j - 1;
+		constrained_vars[(var_i*var_nb) + var_j] = true;
+		constrained_vars[(var_j*var_nb) + var_i] = true;
+		for (int value_i = 0; value_i < color_attempt_nb; value_i++)
+		{
+			for (int value_j = 0; value_j < color_attempt_nb; value_j++)
+			{
+				if (value_i != value_j)
+				{
+					constraints[(var_i * var_nb) + var_j][(value_i*color_attempt_nb) + value_j] = true;
+					constraints[(var_j * var_nb) + var_i][(value_j*color_attempt_nb) + value_i] = true;
+				}
+			}
+		}
+	}
+	file_reader.close();
+	
+	domain_bound = color_attempt_nb;
+	var_domains = vector<vector<int> >(var_nb, vector<int>());
+	for (int var_i = 0; var_i < var_nb; var_i++)
+	{
+		for (int value_i = 0; value_i < color_attempt_nb; value_i++)
+		{
+			var_domains[var_i].push_back(value_i);
+		}
+	}
+
+	inconsistent_instantiation = false;
+	instantiated_vars = vector<bool>(var_nb, false);
+	deleted_values = vector<pair<int, int> >();
+	support_count = vector<int>();
+	support_values = vector<vector<pair<int, int> > >();
 }
 
 bool ConstraintProblem::checkConstraint(int const & x, int const & y, int const & a, int const & b) const
@@ -112,7 +193,7 @@ void ConstraintProblem::initializationAC4()
 	{
 		for (int var_j = 0; var_j < var_nb; var_j++)
 		{
-			if (var_i != var_j)
+			if (constrained_vars[(var_i * var_nb) + var_j])
 			{
 				int pairs_count = 0;
 				for (vector<int>::iterator value_i_it = var_domains[var_i].begin(); 
@@ -166,30 +247,27 @@ void ConstraintProblem::AC4(vector<pair<int, int> > & all_deleted_values)
 			for (auto paired_value : support_values[deleted_pair.second + (domain_bound*deleted_pair.first)])
 			{
 				// Making sure the paired variable is not instantiated yet, it is useless otherwise
-				if (true)//not instantiated_vars[paired_value.first])
-				{
-					support_count[(paired_value.second) + (paired_value.first*domain_bound) + (deleted_pair.first*domain_bound*var_nb)] += -1;
+				support_count[(paired_value.second) + (paired_value.first*domain_bound) + (deleted_pair.first*domain_bound*var_nb)] += -1;
 					
-					// If the paired value has no support value left : propagate
-					if (support_count[(paired_value.second) + (paired_value.first*domain_bound) + (deleted_pair.first*domain_bound*var_nb)] == 0)
+				// If the paired value has no support value left : propagate
+				if (support_count[(paired_value.second) + (paired_value.first*domain_bound) + (deleted_pair.first*domain_bound*var_nb)] == 0)
+				{
+					vector<int>::iterator value_it = std::find(var_domains[paired_value.first].begin(),
+						var_domains[paired_value.first].end(),
+						paired_value.second);
+					if (value_it != var_domains[paired_value.first].end())
 					{
-						vector<int>::iterator value_it = std::find(var_domains[paired_value.first].begin(),
-							var_domains[paired_value.first].end(),
-							paired_value.second);
-						if (value_it != var_domains[paired_value.first].end())
+						removeDomainValue(paired_value.first, value_it);
+						deleted_values.push_back(paired_value);
+						// Keeping all the deleted values to add them back in case the backtrack goes back
+						all_deleted_values.push_back(paired_value);
+						if (var_domains[paired_value.first].size() == 0)
 						{
-							removeDomainValue(paired_value.first, value_it);
-							deleted_values.push_back(paired_value);
-							// Keeping all the deleted values to add them back in case the backtrack goes back
-							all_deleted_values.push_back(paired_value);
-							if (var_domains[paired_value.first].size() == 0)
-							{
-								inconsistent_instantiation = true;
-								return;
-							}
-
-							//cout << "Deleted value with propagation " << paired_value.first << "," << paired_value.second << endl;
+							inconsistent_instantiation = true;
+							return;
 						}
+
+						//cout << "Deleted value with propagation " << paired_value.first << "," << paired_value.second << endl;
 					}
 				}
 			}
@@ -239,12 +317,15 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect,
 	vector<pair<int, int> >::iterator pair_it;
 	for (int vect_idx = 0; vect_idx < var_idx; vect_idx++)
 	{
-		bool constraint_respected = checkConstraint(visit_order_vect[var_idx], visit_order_vect[vect_idx],
-			partial_instantiation[var_idx], partial_instantiation[vect_idx]);
-		if (not constraint_respected)
+		if (constrained_vars[(visit_order_vect[var_idx]*var_nb) + visit_order_vect[vect_idx]])
 		{
-			// The partial solution is not legit
-			return false;
+			bool constraint_respected = checkConstraint(visit_order_vect[var_idx], visit_order_vect[vect_idx],
+				partial_instantiation[var_idx], partial_instantiation[vect_idx]);
+			if (not constraint_respected)
+			{
+				// The partial solution is not legit
+				return false;
+			}
 		}
 	}
 

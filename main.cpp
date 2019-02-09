@@ -1,17 +1,39 @@
 #include "ConstraintProblem.h"
 
 #include <ctime>
+#include <stdlib.h>
 
-int main()
+int main(int argc, char *argv[])
 {
-	int queen_nb = 38;
-
-	cout << "Starting ..." << endl;
+	ConstraintProblem pb_test;
 	std::clock_t start;
 	double duration;
 
 	start = std::clock();
-	ConstraintProblem pb_test(queen_nb);
+	if (argc > 1)
+	{
+		if (argv[1] == "queen")
+		{
+			int queen_nb = std::atoi(argv[2]);
+			pb_test.createQueenProblem(queen_nb);
+		}
+		else if (argv[1] == "color")
+		{
+			string filename(argv[2]);
+			int color_attempt_nb = (std::atoi(argv[3]));
+			pb_test.createColorationProblem(filename, color_attempt_nb);
+		}
+		else
+		{
+			cout << "Wrong input : " << argv[1] << endl;
+		}
+	}
+	else
+	{
+		int queen_nb = 40;
+		pb_test.createQueenProblem(queen_nb);
+		//pb_test.createColorationProblem("Instances\\myciel6.col", 7);
+	}
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 	cout << "Construction duration : " << duration << " seconds" << endl;;
 	cout << endl;
@@ -29,12 +51,15 @@ int main()
 	cout << endl;
 
 	// Displaying the solution
-	cout << "Solution : ";
-	for (auto it : solution)
+	if (solution.size() != 0)
 	{
-		cout << it << "  ";
+		cout << "Solution : ";
+		for (auto it : solution)
+		{
+			cout << it << "  ";
+		}
+		cout << endl;
 	}
-	cout << endl;
 
 	return 0;
 }
