@@ -11,8 +11,8 @@ ConstraintProblem::ConstraintProblem()
 	instantiated_vars = vector<bool>();
 
 	deleted_values = vector<pair<int, int> >();
-	support_count = map<tuple<int, int, int>, int>();
-	support_values = map < pair<int, int>, vector<pair<int, int> > >();
+	support_count = vector<int>();
+	support_values = vector<vector<pair<int, int> > >();
 }
 
 ConstraintProblem::ConstraintProblem(int const & n)
@@ -22,8 +22,9 @@ ConstraintProblem::ConstraintProblem(int const & n)
 	inconsistent_instantiation = false;
 	instantiated_vars = vector<bool>(var_nb, false);
 	deleted_values = vector<pair<int, int> >();
-	support_count = map<tuple<int, int, int>, int>();
-	support_values = map < pair<int, int>, vector<pair<int, int> > >();
+	support_count = vector<int>();
+	support_values = vector<vector<pair<int, int> > >();
+
 	// Constructing domains
 	for (int i = 0; i < n; i++)
 	{
@@ -92,12 +93,20 @@ void ConstraintProblem::addValues(vector<pair<int, int>> const & values_to_add)
 	}
 }
 
+void ConstraintProblem::removeDomainValue(const  int & var_i, vector<int>::iterator value_i_it)
+{
+	var_domains[var_i].erase(value_i_it);
+	//vector<int>::iterator back_it = std::prev(var_domains[var_i].end());
+	//std::iter_swap(value_i_it, back_it);
+	//var_domains[var_i].pop_back();
+}
+
 void ConstraintProblem::initializationAC4()
 {
 	deleted_values = vector<pair<int, int> >();
-	support_count = map<tuple<int, int, int>, int>();
-	support_values = map < pair<int, int>, vector<pair<int, int> > >();
-	
+	support_count = vector<int>(var_nb*var_nb*domain_bound, 0);
+	support_values = vector<vector<pair<int, int> > >(var_nb*domain_bound);
+
 	// Going through the constraints
 	for (int var_i = 0; var_i < var_nb; var_i++)
 	{
@@ -117,23 +126,14 @@ void ConstraintProblem::initializationAC4()
 							// The pair (value_i, value_j) is acceptable for the variables (var_i, var_j)
 							pairs_count++;
 							// Adding a value to the support of (var_j, value_j)
-							auto support_it = support_values.find(std::make_pair(var_j, value_j));
-							if (support_it != support_values.end())
-							{
-								support_it->second.push_back(std::make_pair(var_i, *value_i_it));
-							}
-							else
-							{
-								support_values[std::make_pair(var_j, value_j)]
-									= vector<pair<int, int> >(1, std::make_pair(var_i, *value_i_it));
-							}
+							support_values[value_j + (domain_bound*var_j)].push_back(std::make_pair(var_i, *value_i_it));
 						}
 					}
 					if (pairs_count == 0)
 					{
 						//cout << "Deleting val " << *value_i_it << " with var " << var_i << " because of var " << var_j << endl;
 						deleted_values.push_back(std::make_pair(var_i, *value_i_it));
-						var_domains[var_i].erase(value_i_it);
+						removeDomainValue(var_i, value_i_it);
 						value_i_it--;
 						if (var_domains[var_i].size() == 0)
 						{
@@ -143,7 +143,7 @@ void ConstraintProblem::initializationAC4()
 					}
 					else
 					{
-						support_count[std::make_tuple(var_i, var_j, *value_i_it)] = pairs_count;
+						support_count[(*value_i_it) + (var_i*domain_bound) + (var_j*domain_bound*var_nb)] = pairs_count;
 					}
 				}
 			}
@@ -151,9 +151,9 @@ void ConstraintProblem::initializationAC4()
 	}
 }
 
-vector<pair<int, int> > ConstraintProblem::AC4()
+void ConstraintProblem::AC4(vector<pair<int, int> > & all_deleted_values)
 {
-	vector<pair<int, int> > all_deleted_values = deleted_values;
+	all_deleted_values = deleted_values;
 	//cout << "SIZE : " << deleted_values.size() << endl;
 	while (deleted_values.size() > 0)
 	{
@@ -161,31 +161,31 @@ vector<pair<int, int> > ConstraintProblem::AC4()
 		pair<int, int> deleted_pair = deleted_values.back();
 		deleted_values.pop_back();
 
-		map < pair<int, int>, vector<pair<int, int> > >::iterator paired_value_vect_it = support_values.find(deleted_pair);
-		if (paired_value_vect_it != support_values.end())
+		if (support_values[deleted_pair.second + (domain_bound*deleted_pair.first)].size()!=0)
 		{
-			for (auto paired_value : paired_value_vect_it->second)
+			for (auto paired_value : support_values[deleted_pair.second + (domain_bound*deleted_pair.first)])
 			{
 				// Making sure the paired variable is not instantiated yet, it is useless otherwise
 				if (true)//not instantiated_vars[paired_value.first])
 				{
-					support_count[std::make_tuple(paired_value.first, deleted_pair.first, paired_value.second)] += -1;
+					support_count[(paired_value.second) + (paired_value.first*domain_bound) + (deleted_pair.first*domain_bound*var_nb)] += -1;
+					
 					// If the paired value has no support value left : propagate
-					if (support_count[std::make_tuple(paired_value.first, deleted_pair.first, paired_value.second)] == 0)
+					if (support_count[(paired_value.second) + (paired_value.first*domain_bound) + (deleted_pair.first*domain_bound*var_nb)] == 0)
 					{
 						vector<int>::iterator value_it = std::find(var_domains[paired_value.first].begin(),
 							var_domains[paired_value.first].end(),
 							paired_value.second);
 						if (value_it != var_domains[paired_value.first].end())
 						{
-							var_domains[paired_value.first].erase(value_it);
+							removeDomainValue(paired_value.first, value_it);
 							deleted_values.push_back(paired_value);
 							// Keeping all the deleted values to add them back in case the backtrack goes back
 							all_deleted_values.push_back(paired_value);
 							if (var_domains[paired_value.first].size() == 0)
 							{
 								inconsistent_instantiation = true;
-								return all_deleted_values;
+								return;
 							}
 
 							//cout << "Deleted value with propagation " << paired_value.first << "," << paired_value.second << endl;
@@ -201,7 +201,7 @@ vector<pair<int, int> > ConstraintProblem::AC4()
 		}
 	}
 
-	return all_deleted_values;
+	return;
 }
 
 vector<int> ConstraintProblem::backtrackSolve()
@@ -283,7 +283,7 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect,
 			addValues(deleted_values);
 			return false;
 		}
-		ac_deleted_values = AC4();
+		AC4(ac_deleted_values);
 		if (inconsistent_instantiation)
 		{
 			inconsistent_instantiation = false;

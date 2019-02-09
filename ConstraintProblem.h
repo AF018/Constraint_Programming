@@ -20,8 +20,12 @@ class ConstraintProblem
 	vector<bool> instantiated_vars;
 	// Containers for the arc consistency
 	vector<pair<int, int> > deleted_values;
-	map<tuple<int, int, int>, int> support_count;
-	map < pair<int, int>, vector<pair<int, int> > > support_values;
+	
+	//map<tuple<int, int, int>, int> support_count;
+	vector<int> support_count;
+	
+	//map < pair<int, int>, vector<pair<int, int> > > support_values;
+	vector<vector<pair<int, int> > > support_values;
 public:
 	// Default constructor
 	ConstraintProblem();
@@ -34,10 +38,11 @@ public:
 	bool checkConstraint(int const & x, int const & y, int const & a, int const & b) const;
 	// Add values to the domains
 	void addValues(vector<pair<int, int> > const & values_to_add);
+	void removeDomainValue(const  int & var_i, vector<int>::iterator value_i_it);
 
 	// Establishes arc consistency (AC4 algorithm)
 	void initializationAC4();
-	vector<pair<int, int> > AC4();
+	void AC4(vector<pair<int, int> > & ac_deleted_values);
 
 	// Backtrack algorithm
 	vector<int> backtrackSolve();
