@@ -21,9 +21,6 @@ class ConstraintProblem
 	// Elements used during the optimization
 	bool inconsistent_instantiation;
 	vector<bool> instantiated_vars;
-	// Containers for the arc consistency
-	vector<int> support_count;
-	vector<vector<pair<int, int> > > support_values;
 public:
 	// Default constructor
 	ConstraintProblem();
@@ -48,7 +45,8 @@ public:
 	void forwardCheck(vector<pair<int, int> > & all_deleted_values, vector<int> part_inst);
 
 	// Establishes arc consistency (AC4 algorithm)
-	void initializationAC4(vector<pair<int, int> > & ac_deleted_values);
+	void initializationAC4(vector<pair<int, int> > & ac_deleted_values, vector<int> & support_count,
+						   vector<vector<pair<int, int> > > & support_values);
 	void AC4(vector<pair<int, int> > & ac_deleted_values);
 
 	// Backtrack algorithm

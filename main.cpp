@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int queen_nb = 28;
+		int queen_nb = 25;
 		pb_test.createQueenProblem(queen_nb);
 		//pb_test.createColorationProblem("Instances\\myciel6.col", 7);
 	}
@@ -65,14 +65,6 @@ int main(int argc, char *argv[])
 
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 	cout << "Construction duration : " << duration << " seconds" << endl;;
-	cout << endl;
-
-	start = std::clock();
-	vector<pair<int, int> > deleted_values;
-	pb_test.initializationAC4(deleted_values);
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-	cout << "Deleted " << deleted_values.size() << " values with arc consistency" << endl;
-	cout << "Arc consistency duration : " << duration << " seconds" << endl;;
 	cout << endl;
 
 	start = std::clock();

@@ -14,9 +14,6 @@ ConstraintProblem::ConstraintProblem()
 	// Variables for the optimization
 	inconsistent_instantiation = false;
 	instantiated_vars = vector<bool>();
-	// Arc consistency elements
-	support_count = vector<int>();
-	support_values = vector<vector<pair<int, int> > >();
 }
 
 ConstraintProblem::~ConstraintProblem()
@@ -29,8 +26,6 @@ void ConstraintProblem::createQueenProblem(int const & n)
 	domain_bound = n;
 	inconsistent_instantiation = false;
 	instantiated_vars = vector<bool>(var_nb, false);
-	support_count = vector<int>();
-	support_values = vector<vector<pair<int, int> > >();
 
 	// Constructing domains
 	for (int i = 0; i < n; i++)
@@ -242,11 +237,10 @@ void ConstraintProblem::forwardCheck(vector<pair<int, int>> & all_deleted_values
 	return;
 }
 
-void ConstraintProblem::initializationAC4(vector<pair<int, int> > & ac_deleted_values)
+void ConstraintProblem::initializationAC4(vector<pair<int, int> > & ac_deleted_values,
+										  vector<int> & support_count, 
+										  vector<vector<pair<int, int> > > & support_values)
 {
-	support_count = vector<int>(var_nb*var_nb*domain_bound, 0);
-	support_values = vector<vector<pair<int, int> > >(var_nb*domain_bound);
-
 	// Going through the constraints
 	for (int var_i = 0; var_i < var_nb; var_i++)
 	{
@@ -293,11 +287,14 @@ void ConstraintProblem::initializationAC4(vector<pair<int, int> > & ac_deleted_v
 
 void ConstraintProblem::AC4(vector<pair<int, int> > & all_deleted_values)
 {
-	initializationAC4(all_deleted_values);
+	vector<int> support_count = vector<int>(var_nb*var_nb*domain_bound, 0);
+	vector<vector<pair<int, int> > > support_values = vector<vector<pair<int, int> > >(var_nb*domain_bound);
+	initializationAC4(all_deleted_values, support_count, support_values);
 	if (inconsistent_instantiation)
 	{
 		return;
 	}
+
 	vector<pair<int, int> > deleted_values;
 	for (auto deleted_value : all_deleted_values)
 	{
