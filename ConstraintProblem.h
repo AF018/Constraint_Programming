@@ -43,7 +43,7 @@ public:
 	void removeDomainValue(const  int & var_i, vector<int>::iterator const & value_i_it);
 
 	// Performs forward check
-	void forwardCheck(vector<pair<int, int> > & all_deleted_values, vector<int> part_inst);
+	void forwardCheck(vector<pair<int, int> > & all_deleted_values, vector<int> part_inst, int const & var_idx);
 
 	// Establishes arc consistency (AC4 algorithm)
 	void initializationAC4(vector<pair<int, int> > & ac_deleted_values, vector<int> & support_count,
