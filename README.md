@@ -2,21 +2,16 @@
 Project for the constraint programming course at MPRO
 
 ## TODO
-Forward checking<br> 
-Arc consistance<br> 
-Possibilité de combiner les méthodes<br> 
 Ordre de progression dans le backtrack : choix des variables, choix des valeurs (shuffle, plus grand domaine, etc ...)
 
 Gestion des symétries
 
-Création des instances de coloration
-
 ## TO FIX
 Pas besoin de checker si l'instantiation partielle est correcte si l'arc consistency est enclenchée ?<br>
-Vecteur des valeurs supprimées par Arc consistency construit par copie dans le backtrack récursif
-Peut etre changé pour éviter la copie<br>
-Tout est bien remis à zero une fois le backtrack fini ?<br>
-Bonne taille de vecteur dans chaque vecteur booléen de contraintes ?<br>
+Faire la vérification des contraintes ou l'arc consistance mais pas les deux<br>
+Enlever support_values, deleted_values et l'autre des attributs, en faire des arguments passés en référence<br>
 
 ## Evolution du temps pour les reines
 07/02 : 20 en 1.15s, 25 en 1.476s, 30 en 5.909s, 32 en 31.013s, 40 prend trop de temps
+09/02 : 20 en 0.433s, 25 en 0.507s, 30 en 1.768s, 32 en 9.985s, 35 en 5.038s, 40 en 29.241s, 45 en 100.16s
+Correction d'un bug : régression des valeurs, bcp plus mauvais

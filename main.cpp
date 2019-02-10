@@ -3,6 +3,31 @@
 #include <ctime>
 #include <stdlib.h>
 
+vector<int> readParameters(string const & filename)
+{
+	vector<int> parameters;
+	ifstream file_reader;
+	file_reader.open(filename);
+
+	if (!file_reader)
+	{
+		cout << "Unable to open : " << filename << endl;
+		// call system to stop
+		exit(1);
+	}
+	char readChar;
+	int readInt;
+
+	// Arc consistency : AC
+	file_reader >> readChar >> readChar >> readInt;
+	parameters.push_back(readInt);
+	// Forward check : FC
+	file_reader >> readChar >> readChar >> readInt;
+	parameters.push_back(readInt);
+
+	return parameters;
+}
+
 int main(int argc, char *argv[])
 {
 	ConstraintProblem pb_test;
@@ -30,17 +55,23 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int queen_nb = 40;
+		int queen_nb = 28;
 		pb_test.createQueenProblem(queen_nb);
 		//pb_test.createColorationProblem("Instances\\myciel6.col", 7);
 	}
+
+	vector<int> parameters_vect = readParameters("parameters.txt");
+	pb_test.applyParameters(parameters_vect);
+
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 	cout << "Construction duration : " << duration << " seconds" << endl;;
 	cout << endl;
 
 	start = std::clock();
-	pb_test.initializationAC4();
+	vector<pair<int, int> > deleted_values;
+	pb_test.initializationAC4(deleted_values);
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	cout << "Deleted " << deleted_values.size() << " values with arc consistency" << endl;
 	cout << "Arc consistency duration : " << duration << " seconds" << endl;;
 	cout << endl;
 

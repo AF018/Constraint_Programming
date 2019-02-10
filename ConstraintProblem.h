@@ -15,11 +15,13 @@ class ConstraintProblem
 	vector<vector<int> > var_domains;
 	vector<vector<bool> > constraints;
 	vector<bool> constrained_vars;
+	// Parameters
+	bool arc_consistency_activated;
+	bool forward_check_activated;
 	// Elements used during the optimization
 	bool inconsistent_instantiation;
 	vector<bool> instantiated_vars;
 	// Containers for the arc consistency
-	vector<pair<int, int> > deleted_values;
 	vector<int> support_count;
 	vector<vector<pair<int, int> > > support_values;
 public:
@@ -32,16 +34,21 @@ public:
 	void createQueenProblem(int const & n);
 	// Creates a graph coloring problem with the graph contained in the file
 	void createColorationProblem(string const & filename, int const & color_attempt_nb);
+	// Applies parameters for the optimization
+	void applyParameters(vector<int> const & parameters_vect);
 	
 	// Check if pair (a,b) is acceptable for variables (x,y)
 	bool checkConstraint(int const & x, int const & y, int const & a, int const & b) const;
 	// Add values to the domains
 	void addValues(vector<pair<int, int> > const & values_to_add);
 	// Removes a value from the domain of a variable
-	void removeDomainValue(const  int & var_i, vector<int>::iterator value_i_it);
+	void removeDomainValue(const  int & var_i, vector<int>::iterator const & value_i_it);
+
+	// Performs forward check
+	void forwardCheck(vector<pair<int, int> > & all_deleted_values, vector<int> part_inst);
 
 	// Establishes arc consistency (AC4 algorithm)
-	void initializationAC4();
+	void initializationAC4(vector<pair<int, int> > & ac_deleted_values);
 	void AC4(vector<pair<int, int> > & ac_deleted_values);
 
 	// Backtrack algorithm
