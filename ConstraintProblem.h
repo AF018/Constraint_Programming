@@ -14,7 +14,8 @@ class ConstraintProblem
 	int domain_bound;
 	vector<vector<int> > var_domains;
 	vector<vector<bool> > constraints;
-	vector<bool> constrained_vars;
+	//vector<bool> constrained_vars;
+	vector<vector<int> > constrained_vars;
 	// Parameters
 	bool arc_consistency_activated;
 	bool forward_check_activated;

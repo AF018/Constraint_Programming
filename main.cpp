@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int queen_nb = 25;
+		int queen_nb = 30;
 		pb_test.createQueenProblem(queen_nb);
 		//pb_test.createColorationProblem("Instances\\myciel6.col", 7);
 	}

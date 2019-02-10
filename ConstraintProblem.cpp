@@ -7,7 +7,8 @@ ConstraintProblem::ConstraintProblem()
 	domain_bound = 0;
 	var_domains = vector<vector<int> >();
 	constraints = vector<vector<bool> >();
-	constrained_vars = vector<bool>();
+	//constrained_vars = vector<bool>();
+	constrained_vars = vector<vector<int> >();
 	// Parameters
 	arc_consistency_activated = false;
 	forward_check_activated = false;
@@ -37,7 +38,8 @@ void ConstraintProblem::createQueenProblem(int const & n)
 		}
 	}
 	constraints = vector<vector<bool> >();
-	constrained_vars = vector<bool>(var_nb*var_nb, false);
+	//constrained_vars = vector<bool>(var_nb*var_nb, false);
+	constrained_vars = vector<vector<int> >(var_nb, vector<int>());
 	// Constructing constraints
 	bool accepted_values = false;
 	for (int i = 0; i < n; i++)
@@ -47,7 +49,8 @@ void ConstraintProblem::createQueenProblem(int const & n)
 			constraints.push_back(vector<bool>(domain_bound*domain_bound, false));
 			if (i != j)
 			{
-				constrained_vars[(i * n) + j] = true;
+				//constrained_vars[(i * n) + j] = true;
+				constrained_vars[i].push_back(j);
 				// Filling constraints
 				for (int i_value = 0; i_value < n; i_value++)
 				{
@@ -112,7 +115,8 @@ void ConstraintProblem::createColorationProblem(string const & filename, int con
 
 	// Constructing constraints;
 	constraints = vector<vector<bool> >(var_nb*var_nb, vector<bool>(color_attempt_nb*color_attempt_nb, false));
-	constrained_vars = vector<bool>(var_nb*var_nb, false);
+	constrained_vars = vector<vector<int> >(var_nb, vector<int>()); 
+	//constrained_vars = vector<bool>(var_nb*var_nb, false);
 	int var_i;
 	int var_j;
 	for (int constraint_idx=0; constraint_idx<constraint_nb; constraint_idx++)
@@ -121,8 +125,10 @@ void ConstraintProblem::createColorationProblem(string const & filename, int con
 		// Variable values are modified to fit in the interval [0, var_nb-1]
 		var_i = var_i - 1;
 		var_j = var_j - 1;
-		constrained_vars[(var_i*var_nb) + var_j] = true;
-		constrained_vars[(var_j*var_nb) + var_i] = true;
+		//constrained_vars[(var_i*var_nb) + var_j] = true;
+		//constrained_vars[(var_j*var_nb) + var_i] = true;
+		constrained_vars[var_i].push_back(var_j);
+		constrained_vars[var_j].push_back(var_i);
 		for (int value_i = 0; value_i < color_attempt_nb; value_i++)
 		{
 			for (int value_j = 0; value_j < color_attempt_nb; value_j++)
@@ -201,9 +207,10 @@ void ConstraintProblem::forwardCheck(vector<pair<int, int>> & all_deleted_values
 					<< "does not have the right size : " << var_domains[var_i].size() << endl;
 			}
 			int value_i = var_domains[var_i][0];
-			for (int var_j = 0; var_j < var_nb; var_j++)
+			for (auto var_j : constrained_vars[var_i])
+			//for (int var_j = 0; var_j < var_nb; var_j++)
 			{
-				if ((not instantiated_vars[var_j]) && constrained_vars[(var_i * var_nb) + var_j])
+				if ((not instantiated_vars[var_j]))// && constrained_vars[(var_i * var_nb) + var_j])
 				{
 					for (vector<int>::iterator value_j_it = var_domains[var_j].begin();
 						value_j_it != var_domains[var_j].end(); value_j_it++)
@@ -244,10 +251,11 @@ void ConstraintProblem::initializationAC4(vector<pair<int, int> > & ac_deleted_v
 	// Going through the constraints
 	for (int var_i = 0; var_i < var_nb; var_i++)
 	{
-		for (int var_j = 0; var_j < var_nb; var_j++)
+		for (auto var_j : constrained_vars[var_i])
+		//for (int var_j = 0; var_j < var_nb; var_j++)
 		{
-			if (constrained_vars[(var_i * var_nb) + var_j])
-			{
+			//if (constrained_vars[(var_i * var_nb) + var_j])
+			//{
 				int pairs_count = 0;
 				for (vector<int>::iterator value_i_it = var_domains[var_i].begin(); 
 					value_i_it != var_domains[var_i].end(); value_i_it++)
@@ -280,7 +288,7 @@ void ConstraintProblem::initializationAC4(vector<pair<int, int> > & ac_deleted_v
 						support_count[(*value_i_it) + (var_i*domain_bound) + (var_j*domain_bound*var_nb)] = pairs_count;
 					}
 				}
-			}
+			//}
 		}
 	}
 }
@@ -359,8 +367,10 @@ vector<int> ConstraintProblem::backtrackSolve()
 	{
 		var_domains[visit_order_vect[0]] = vector<int>(1, domain_value);
 		instantiated_vars[visit_order_vect[0]] = true;
-		vector<int> instantiation(1, domain_value);
-		
+		//vector<int> instantiation(1, domain_value);
+		vector<int> instantiation(var_nb, -1);
+		instantiation[visit_order_vect[0]] = domain_value;
+
 		//cout << "Affichage" << endl;
 		//int isz = 0;
 		//for (auto dma : var_domains)
@@ -392,12 +402,16 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect,
 
 	// Checks if the partial instantiation is correct, more precisely if the last added value does not create conflicts
 	vector<pair<int, int> >::iterator pair_it;
-	for (int vect_idx = 0; vect_idx < var_idx; vect_idx++)
+	for (auto constraint_idx : constrained_vars[visit_order_vect[var_idx]])
+	//for (int vect_idx = 0; vect_idx < var_idx; vect_idx++)
 	{
-		if (constrained_vars[(visit_order_vect[var_idx]*var_nb) + visit_order_vect[vect_idx]])
+		if (instantiated_vars[constraint_idx])
+		//if (constrained_vars[(visit_order_vect[var_idx]*var_nb) + visit_order_vect[vect_idx]])
 		{
-			bool constraint_respected = checkConstraint(visit_order_vect[var_idx], visit_order_vect[vect_idx],
-				partial_instantiation[var_idx], partial_instantiation[vect_idx]);
+			//bool constraint_respected = checkConstraint(visit_order_vect[var_idx], visit_order_vect[vect_idx],
+			//	partial_instantiation[var_idx], partial_instantiation[vect_idx]);
+			bool constraint_respected = checkConstraint(visit_order_vect[var_idx], constraint_idx,
+				partial_instantiation[visit_order_vect[var_idx]], partial_instantiation[constraint_idx]);
 			if (not constraint_respected)
 			{
 				// The partial solution is not legit
@@ -492,7 +506,8 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect,
 	for (auto domain_value : former_var_domain)
 	{
 		var_domains[visit_order_vect[explored_idx]] = vector<int>(1, domain_value);
-		partial_instantiation.push_back(domain_value);
+		partial_instantiation[visit_order_vect[explored_idx]] = domain_value;
+		//partial_instantiation.push_back(domain_value);
 		bool found_solution = recursiveBacktrack(visit_order_vect, explored_idx, partial_instantiation);
 		if (found_solution)
 		{
@@ -501,7 +516,8 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect,
 		}
 		else
 		{
-			partial_instantiation.pop_back();
+			partial_instantiation[visit_order_vect[explored_idx]] = -1;
+			//partial_instantiation.pop_back();
 		}
 	}
 	//cout << "Var " << explored_idx << " not working, going back" << endl;

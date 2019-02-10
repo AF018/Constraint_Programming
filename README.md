@@ -9,7 +9,6 @@ Gestion des symétries
 ## TO FIX
 Pas besoin de checker si l'instantiation partielle est correcte si l'arc consistency est enclenchée ?<br>
 Faire la vérification des contraintes ou l'arc consistance mais pas les deux<br>
-Enlever support_values, deleted_values et l'autre des attributs, en faire des arguments passés en référence<br>
 
 ## Evolution du temps pour les reines
 07/02 : 20 en 1.15s, 25 en 1.476s, 30 en 5.909s, 32 en 31.013s, 40 prend trop de temps
