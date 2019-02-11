@@ -19,6 +19,7 @@ class ConstraintProblem
 	// Parameters
 	bool arc_consistency_activated;
 	bool forward_check_activated;
+	bool random_visit_order;
 	// Elements used during the optimization
 	bool inconsistent_instantiation;
 	vector<bool> instantiated_vars;
@@ -50,6 +51,8 @@ public:
 						   vector<vector<pair<int, int> > > & support_values);
 	void AC4(vector<pair<int, int> > & ac_deleted_values);
 
+	// Modify the visit order
+	void modifyVisitOrder(vector<int> & visit_order_vect);
 	// Backtrack algorithm
 	vector<int> backtrackSolve();
 	// Backtrack recursive function

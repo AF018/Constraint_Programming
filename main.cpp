@@ -24,12 +24,18 @@ vector<int> readParameters(string const & filename)
 	// Forward check : FC
 	file_reader >> readChar >> readChar >> readInt;
 	parameters.push_back(readInt);
+	// Random visit order
+	file_reader >> readChar >> readChar >> readInt;
+	parameters.push_back(readInt);
 
 	return parameters;
 }
 
 int main(int argc, char *argv[])
 {
+	//srand(0);
+	srand(unsigned(time(NULL)));
+
 	ConstraintProblem pb_test;
 	std::clock_t start;
 	double duration;
@@ -55,9 +61,9 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int queen_nb = 35;
+		int queen_nb = 300;
 		pb_test.createQueenProblem(queen_nb);
-		//pb_test.createColorationProblem("Instances\\myciel6.col", 7);
+		//pb_test.createColorationProblem("Instances\\myciel5.col", 4);
 	}
 
 	vector<int> parameters_vect = readParameters("parameters.txt");

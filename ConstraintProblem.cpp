@@ -12,6 +12,7 @@ ConstraintProblem::ConstraintProblem()
 	// Parameters
 	arc_consistency_activated = false;
 	forward_check_activated = false;
+	random_visit_order = false;
 	// Variables for the optimization
 	inconsistent_instantiation = false;
 	instantiated_vars = vector<bool>();
@@ -37,40 +38,41 @@ void ConstraintProblem::createQueenProblem(int const & n)
 			var_domains[i].push_back(j);
 		}
 	}
-	constraints = vector<vector<bool> >();
-	//constrained_vars = vector<bool>(var_nb*var_nb, false);
-	constrained_vars = vector<vector<int> >(var_nb, vector<int>());
-	// Constructing constraints
-	bool accepted_values = false;
+
+	constraints = vector<vector<bool> >(var_nb*var_nb, vector<bool>(domain_bound*domain_bound, true));
+	vector<int> range_vector;
 	for (int i = 0; i < n; i++)
 	{
+		range_vector.push_back(i);
+	}
+	constrained_vars = vector<vector<int> >(var_nb, range_vector);
+	// Constructing constraints
+	int value_j;
+	vector<int>::iterator idx_it;
+	for (int i = 0; i < n; i++)
+	{
+		idx_it = std::find(constrained_vars[i].begin(), constrained_vars[i].end(), i);
+		constrained_vars[i].erase(idx_it);
+		constraints[i + (i*n)] = vector<bool>(domain_bound*domain_bound, false);
 		for (int j = 0; j < n; j++)
 		{
-			constraints.push_back(vector<bool>(domain_bound*domain_bound, false));
 			if (i != j)
 			{
-				//constrained_vars[(i * n) + j] = true;
-				constrained_vars[i].push_back(j);
-				// Filling constraints
-				for (int i_value = 0; i_value < n; i_value++)
+				for (int value_i = 0; value_i < domain_bound; value_i++)
 				{
-					for (int j_value = 0; j_value < n; j_value++)
+					value_j = value_i;
+					constraints[(i * n) + j][(value_i*domain_bound) + value_j] = false;
+					value_j = i - j + value_i;
+					if ((value_j < domain_bound) && (value_j >= 0))
 					{
-						accepted_values = (i_value != j_value) && (i + i_value != j + j_value) && (i - i_value != j - j_value);
-						if (accepted_values)
-						{
-							constraints[(i * n)+j][(i_value*domain_bound)+j_value] = true;
-						}
+						constraints[(i * n) + j][(value_i*domain_bound) + value_j] = false;
+					}
+					value_j = j - i + value_i;
+					if ((value_j < domain_bound) && (value_j >= 0))
+					{
+						constraints[(i * n) + j][(value_i*domain_bound) + value_j] = false;
 					}
 				}
-				/*
-				std::cout << "    ";
-				for (int k = 0; k < constraints[j + i * n].size(); k++)
-				{
-					std::cout << "(" << constraints[j + (i * n)][k].first << "," << constraints[j + (i * n)][k].second << ")    ";
-				}
-				cout << endl;
-				*/
 			}
 		}
 	}
@@ -116,7 +118,6 @@ void ConstraintProblem::createColorationProblem(string const & filename, int con
 	// Constructing constraints;
 	constraints = vector<vector<bool> >(var_nb*var_nb, vector<bool>(color_attempt_nb*color_attempt_nb, false));
 	constrained_vars = vector<vector<int> >(var_nb, vector<int>()); 
-	//constrained_vars = vector<bool>(var_nb*var_nb, false);
 	int var_i;
 	int var_j;
 	for (int constraint_idx=0; constraint_idx<constraint_nb; constraint_idx++)
@@ -125,8 +126,6 @@ void ConstraintProblem::createColorationProblem(string const & filename, int con
 		// Variable values are modified to fit in the interval [0, var_nb-1]
 		var_i = var_i - 1;
 		var_j = var_j - 1;
-		//constrained_vars[(var_i*var_nb) + var_j] = true;
-		//constrained_vars[(var_j*var_nb) + var_i] = true;
 		constrained_vars[var_i].push_back(var_j);
 		constrained_vars[var_j].push_back(var_i);
 		for (int value_i = 0; value_i < color_attempt_nb; value_i++)
@@ -166,6 +165,10 @@ void ConstraintProblem::applyParameters(vector<int> const & parameters_vect)
 	if (parameters_vect[1] == 1)
 	{
 		forward_check_activated = true;
+	}
+	if (parameters_vect[2] == 1)
+	{
+		random_visit_order = true;
 	}
 }
 
@@ -223,14 +226,6 @@ void ConstraintProblem::forwardCheck(vector<pair<int, int>> & all_deleted_values
 						value_j_it--;
 						if (var_domains[var_j].size() == 0)
 						{
-
-							//for (auto value : part_inst)
-							//{
-							//	cout << value << " ";
-							//}
-							//cout << "\t" << var_i << " " << var_j;
-							//cout << endl;
-
 							inconsistent_instantiation = true;
 							return;
 						}
@@ -268,7 +263,6 @@ void ConstraintProblem::initializationAC4(vector<pair<int, int> > & ac_deleted_v
 				}
 				if (pairs_count == 0)
 				{
-					//cout << "Deleting val " << *value_i_it << " with var " << var_i << " because of var " << var_j << endl;
 					ac_deleted_values.push_back(std::make_pair(var_i, *value_i_it));
 					removeDomainValue(var_i, value_i_it);
 					value_i_it--;
@@ -302,7 +296,6 @@ void ConstraintProblem::AC4(vector<pair<int, int> > & all_deleted_values)
 	{
 		deleted_values.push_back(deleted_value);
 	}
-	//cout << "SIZE : " << deleted_values.size() << endl;
 	while (deleted_values.size() > 0)
 	{
 		// Popping the last deleted value out of the container
@@ -333,19 +326,26 @@ void ConstraintProblem::AC4(vector<pair<int, int> > & all_deleted_values)
 							inconsistent_instantiation = true;
 							return;
 						}
-
 						//cout << "Deleted value with propagation " << paired_value.first << "," << paired_value.second << endl;
 					}
 				}
 			}
 		}
-		else
-		{
-			//cout << deleted_pair.first << "," << deleted_pair.second << "n'a aucune valeur support" << endl;
-		}
 	}
 
 	return;
+}
+
+void ConstraintProblem::modifyVisitOrder(vector<int>& visit_order_vect)
+{
+	if (random_visit_order)
+	{
+		std::random_shuffle(visit_order_vect.begin(), visit_order_vect.end());
+		for (int var_idx=0; var_idx < var_nb; var_idx++)
+		{
+			std::random_shuffle(var_domains[var_idx].begin(), var_domains[var_idx].end());
+		}
+	}
 }
 
 vector<int> ConstraintProblem::backtrackSolve()
@@ -355,6 +355,8 @@ vector<int> ConstraintProblem::backtrackSolve()
 	{
 		visit_order_vect.push_back(idx);
 	}
+
+	modifyVisitOrder(visit_order_vect);
 
 	vector<int> former_var_domain = var_domains[visit_order_vect[0]];
 	for (auto domain_value : former_var_domain)
