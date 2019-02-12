@@ -1,35 +1,7 @@
-#include "ConstraintProblem.h"
+#include "utils.h"
 
 #include <ctime>
 #include <stdlib.h>
-
-vector<int> readParameters(string const & filename)
-{
-	vector<int> parameters;
-	ifstream file_reader;
-	file_reader.open(filename);
-
-	if (!file_reader)
-	{
-		cout << "Unable to open : " << filename << endl;
-		// call system to stop
-		exit(1);
-	}
-	char readChar;
-	int readInt;
-
-	// Arc consistency : AC
-	file_reader >> readChar >> readChar >> readInt;
-	parameters.push_back(readInt);
-	// Forward check : FC
-	file_reader >> readChar >> readChar >> readInt;
-	parameters.push_back(readInt);
-	// Random visit order
-	file_reader >> readChar >> readChar >> readInt;
-	parameters.push_back(readInt);
-
-	return parameters;
-}
 
 int main(int argc, char *argv[])
 {
@@ -61,7 +33,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int queen_nb = 300;
+		int queen_nb = 20;
 		pb_test.createQueenProblem(queen_nb);
 		//pb_test.createColorationProblem("Instances\\myciel5.col", 4);
 	}
@@ -88,6 +60,16 @@ int main(int argc, char *argv[])
 			cout << it << "  ";
 		}
 		cout << endl;
+		cout << endl;
+		cout << "Correct solution : ";
+		if (checkSolution(solution))
+		{
+			cout << "Yes" << endl;
+		}
+		else
+		{
+			cout << "No" << endl;
+		}
 	}
 
 	return 0;
