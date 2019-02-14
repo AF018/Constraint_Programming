@@ -14,12 +14,13 @@ class ConstraintProblem
 	int domain_bound;
 	vector<vector<int> > var_domains;
 	vector<vector<bool> > constraints;
-	//vector<bool> constrained_vars;
 	vector<vector<int> > constrained_vars;
 	// Parameters
 	bool arc_consistency_activated;
 	bool forward_check_activated;
 	bool random_visit_order;
+	bool visit_small_domains;
+	bool visit_large_domains;
 	// Elements used during the optimization
 	bool inconsistent_instantiation;
 	vector<bool> instantiated_vars;
@@ -52,10 +53,11 @@ public:
 	void AC4(vector<pair<int, int> > & ac_deleted_values);
 
 	// Modify the visit order
-	void modifyVisitOrder(vector<int> & visit_order_vect);
+	void initialVisitOrder(vector<int> & visit_order_vect);
+	void alterVisitOrder(vector<int> & visit_order_vect, int const & current_idx);
 	// Backtrack algorithm
 	vector<int> backtrackSolve();
 	// Backtrack recursive function
-	bool recursiveBacktrack(vector<int> const & visit_order_vect, int const & var_idx, vector<int> & partial_instantiation);
+	bool recursiveBacktrack(vector<int> & visit_order_vect, int const & var_idx, vector<int> & partial_instantiation);
 };
 

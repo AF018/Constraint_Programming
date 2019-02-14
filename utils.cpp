@@ -21,7 +21,13 @@ vector<int> readParameters(string const & filename)
 	// Forward check : FC
 	file_reader >> readChar >> readChar >> readInt;
 	parameters.push_back(readInt);
-	// Random visit order
+	// Random visit order : RV
+	file_reader >> readChar >> readChar >> readInt;
+	parameters.push_back(readInt);
+	// Visit small domains first : SD
+	file_reader >> readChar >> readChar >> readInt;
+	parameters.push_back(readInt);
+	// Visit large domains first : LD
 	file_reader >> readChar >> readChar >> readInt;
 	parameters.push_back(readInt);
 

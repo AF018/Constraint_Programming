@@ -13,6 +13,8 @@ ConstraintProblem::ConstraintProblem()
 	arc_consistency_activated = false;
 	forward_check_activated = false;
 	random_visit_order = false;
+	visit_small_domains = false;
+	visit_large_domains = false;
 	// Variables for the optimization
 	inconsistent_instantiation = false;
 	instantiated_vars = vector<bool>();
@@ -169,6 +171,23 @@ void ConstraintProblem::applyParameters(vector<int> const & parameters_vect)
 	if (parameters_vect[2] == 1)
 	{
 		random_visit_order = true;
+	}
+	if (parameters_vect[3] == 1)
+	{
+		visit_small_domains = true;
+	}
+	if (parameters_vect[4] == 1)
+	{
+		visit_large_domains = true;
+	}
+
+	if (forward_check_activated && arc_consistency_activated)
+	{
+		cout << "Both arc consistency and forward check are activated : this is useless" << endl;
+	}
+	if (visit_small_domains && visit_large_domains)
+	{
+		cout << "You specified to explore both large and small domains first : this is not possible" << endl;
 	}
 }
 
@@ -336,7 +355,7 @@ void ConstraintProblem::AC4(vector<pair<int, int> > & all_deleted_values)
 	return;
 }
 
-void ConstraintProblem::modifyVisitOrder(vector<int>& visit_order_vect)
+void ConstraintProblem::initialVisitOrder(vector<int>& visit_order_vect)
 {
 	if (random_visit_order)
 	{
@@ -348,6 +367,52 @@ void ConstraintProblem::modifyVisitOrder(vector<int>& visit_order_vect)
 	}
 }
 
+void ConstraintProblem::alterVisitOrder(vector<int>& visit_order_vect, int const & current_idx)
+{
+	if (visit_small_domains)
+	{
+		//cout << "idx " << current_idx << "before order : ";
+		//for (auto it : visit_order_vect)
+		//{
+		//	cout << it << " ";
+		//}
+		//cout << endl;
+
+		int smallest_domain_idx = -1;
+		int smallest_domain_size = domain_bound;
+		for (int var_idx = current_idx + 1; var_idx < var_nb; var_idx++)
+		{
+			if (var_domains[visit_order_vect[var_idx]].size() < smallest_domain_size)
+			{
+				smallest_domain_idx = var_idx;
+				smallest_domain_size = var_domains[visit_order_vect[var_idx]].size();
+			}
+		}
+		std::iter_swap(visit_order_vect.begin()+smallest_domain_idx, visit_order_vect.begin() + current_idx + 1);
+
+		//cout << "idx " << current_idx << "after  order : ";
+		//for (auto it : visit_order_vect)
+		//{
+		//	cout << it << " ";
+		//}
+		//cout << endl;
+	}
+	else if (visit_large_domains)
+	{
+		int largest_domain_idx = -1;
+		int largest_domain_size = 0;
+		for (int var_idx = current_idx + 1; var_idx < var_nb; var_idx++)
+		{
+			if (var_domains[visit_order_vect[var_idx]].size() > largest_domain_size)
+			{
+				largest_domain_idx = var_idx;
+				largest_domain_size = var_domains[visit_order_vect[var_idx]].size();
+			}
+		}
+		std::iter_swap(visit_order_vect.begin() + largest_domain_idx, visit_order_vect.begin() + current_idx + 1);
+	}
+}
+
 vector<int> ConstraintProblem::backtrackSolve()
 {
 	vector<int> visit_order_vect;
@@ -356,7 +421,7 @@ vector<int> ConstraintProblem::backtrackSolve()
 		visit_order_vect.push_back(idx);
 	}
 
-	modifyVisitOrder(visit_order_vect);
+	initialVisitOrder(visit_order_vect);
 
 	vector<int> former_var_domain = var_domains[visit_order_vect[0]];
 	for (auto domain_value : former_var_domain)
@@ -392,7 +457,7 @@ vector<int> ConstraintProblem::backtrackSolve()
 	cout << "No solution found" << endl;
 }
 
-bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect, int const & var_idx, vector<int> & partial_instantiation)
+bool ConstraintProblem::recursiveBacktrack(vector<int> & visit_order_vect, int const & var_idx, vector<int> & partial_instantiation)
 {
 	// WARNING : pay attention to the var indices, different from the vect indices
 
@@ -463,18 +528,6 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect,
 			addValues(ac_deleted_values);
 			return false;
 		}
-
-		// Verifying each variable not instantiated has at least one value left in its domain
-		//for (int left_var_idx = var_idx + 1; left_var_idx < var_nb; left_var_idx++)
-		//{
-		//	if (var_domains[visit_order_vect[left_var_idx]].size() == 0)
-		//	{
-		//		//cout << "no domain for var : " << visit_order_vect[left_var_idx] << endl;
-		//		addValues(ac_deleted_values);
-		//		return false;
-		//	}
-		//}
-
 	}
 
 	//for (int idx_1=0; idx_1<var_domains.size(); idx_1++)
@@ -495,6 +548,7 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> const & visit_order_vect,
 	//cout << endl;
 
 	// Trying to assign the next variable
+	alterVisitOrder(visit_order_vect, var_idx);
 	int explored_idx = var_idx + 1;
 	instantiated_vars[visit_order_vect[explored_idx]] = true;
 	vector<int> former_var_domain = var_domains[visit_order_vect[explored_idx]];
