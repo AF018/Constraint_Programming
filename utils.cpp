@@ -30,7 +30,9 @@ vector<int> readParameters(string const & filename)
 	// Visit large domains first : LD
 	file_reader >> readChar >> readChar >> readInt;
 	parameters.push_back(readInt);
-
+	// Arc consistency every two iterations during the backtrack : HA
+	file_reader >> readChar >> readChar >> readInt;
+	parameters.push_back(readInt);
 	return parameters;
 }
 

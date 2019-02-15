@@ -16,6 +16,7 @@ class ConstraintProblem
 	vector<vector<bool> > constraints;
 	vector<vector<int> > constrained_vars;
 	// Parameters
+	bool half_arc_consistency;
 	bool arc_consistency_activated;
 	bool forward_check_activated;
 	bool random_visit_order;

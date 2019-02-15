@@ -1,5 +1,6 @@
 AC 0
-FC 1
+FC 0
 RV 0
-SD 1
+SD 0
 LD 0
+HA 0

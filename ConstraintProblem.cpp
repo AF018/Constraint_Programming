@@ -10,6 +10,7 @@ ConstraintProblem::ConstraintProblem()
 	//constrained_vars = vector<bool>();
 	constrained_vars = vector<vector<int> >();
 	// Parameters
+	half_arc_consistency = false;
 	arc_consistency_activated = false;
 	forward_check_activated = false;
 	random_visit_order = false;
@@ -180,10 +181,18 @@ void ConstraintProblem::applyParameters(vector<int> const & parameters_vect)
 	{
 		visit_large_domains = true;
 	}
+	if (parameters_vect[5] == 1)
+	{
+		half_arc_consistency = true;
+	}
 
 	if (forward_check_activated && arc_consistency_activated)
 	{
 		cout << "Both arc consistency and forward check are activated : this is useless" << endl;
+	}
+	if (half_arc_consistency && arc_consistency_activated)
+	{
+		cout << "Both arc consistency and half arc consistency are activated : this is useless" << endl;
 	}
 	if (visit_small_domains && visit_large_domains)
 	{
@@ -379,7 +388,7 @@ void ConstraintProblem::alterVisitOrder(vector<int>& visit_order_vect, int const
 		//cout << endl;
 
 		int smallest_domain_idx = -1;
-		int smallest_domain_size = domain_bound;
+		int smallest_domain_size = domain_bound+1;
 		for (int var_idx = current_idx + 1; var_idx < var_nb; var_idx++)
 		{
 			if (var_domains[visit_order_vect[var_idx]].size() < smallest_domain_size)
@@ -428,7 +437,6 @@ vector<int> ConstraintProblem::backtrackSolve()
 	{
 		var_domains[visit_order_vect[0]] = vector<int>(1, domain_value);
 		instantiated_vars[visit_order_vect[0]] = true;
-		//vector<int> instantiation(1, domain_value);
 		vector<int> instantiation(var_nb, -1);
 		instantiation[visit_order_vect[0]] = domain_value;
 
@@ -519,7 +527,7 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> & visit_order_vect, int c
 			return false;
 		}
 	}
-	if (arc_consistency_activated)
+	if (arc_consistency_activated || (half_arc_consistency && (((var_nb-var_idx) % 2) == 0)))
 	{
 		AC4(ac_deleted_values);
 		if (inconsistent_instantiation)
@@ -548,7 +556,7 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> & visit_order_vect, int c
 	//cout << endl;
 
 	// Trying to assign the next variable
-	alterVisitOrder(visit_order_vect, var_idx);
+	alterVisitOrder(visit_order_vect, var_idx);	
 	int explored_idx = var_idx + 1;
 	instantiated_vars[visit_order_vect[explored_idx]] = true;
 	vector<int> former_var_domain = var_domains[visit_order_vect[explored_idx]];
