@@ -33,10 +33,13 @@ vector<int> readParameters(string const & filename)
 	// Arc consistency every two iterations during the backtrack : HA
 	file_reader >> readChar >> readChar >> readInt;
 	parameters.push_back(readInt);
+	// Values constrained with more values from incoming variables : VA
+	file_reader >> readChar >> readChar >> readInt;
+	parameters.push_back(readInt);
 	return parameters;
 }
 
-bool checkSolution(vector<int> const & solution)
+bool checkQueenSolution(vector<int> const & solution)
 {
 	int value_i, value_j;
 	bool accepted_values;

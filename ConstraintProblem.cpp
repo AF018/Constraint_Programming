@@ -1,5 +1,10 @@
 #include "ConstraintProblem.h"
 
+bool compare_pair_vector(pair<int, int> const & a,
+	pair<int, int> const & b)
+{
+	return a.first < b.first;
+}
 
 ConstraintProblem::ConstraintProblem()
 {
@@ -16,6 +21,7 @@ ConstraintProblem::ConstraintProblem()
 	random_visit_order = false;
 	visit_small_domains = false;
 	visit_large_domains = false;
+	more_constrained_values = false;
 	// Variables for the optimization
 	inconsistent_instantiation = false;
 	instantiated_vars = vector<bool>();
@@ -184,6 +190,10 @@ void ConstraintProblem::applyParameters(vector<int> const & parameters_vect)
 	if (parameters_vect[5] == 1)
 	{
 		half_arc_consistency = true;
+	}
+	if (parameters_vect[6] == 1)
+	{
+		more_constrained_values = true;
 	}
 
 	if (forward_check_activated && arc_consistency_activated)
@@ -409,7 +419,7 @@ void ConstraintProblem::alterVisitOrder(vector<int>& visit_order_vect, int const
 	else if (visit_large_domains)
 	{
 		int largest_domain_idx = -1;
-		int largest_domain_size = 0;
+		int largest_domain_size = -1;
 		for (int var_idx = current_idx + 1; var_idx < var_nb; var_idx++)
 		{
 			if (var_domains[visit_order_vect[var_idx]].size() > largest_domain_size)
@@ -419,6 +429,44 @@ void ConstraintProblem::alterVisitOrder(vector<int>& visit_order_vect, int const
 			}
 		}
 		std::iter_swap(visit_order_vect.begin() + largest_domain_idx, visit_order_vect.begin() + current_idx + 1);
+	}
+}
+
+void ConstraintProblem::alterDomainOrder(vector<int> const & visit_order_vect, int const & current_idx)
+{
+	if (more_constrained_values)
+	{
+		vector<pair<int, int> > value_constraint_orders = vector<pair<int, int> >(var_domains[visit_order_vect[current_idx]].size(), make_pair(0, 0));
+		for (int value_idx = 0; value_idx < var_domains[visit_order_vect[current_idx]].size(); value_idx++)
+		{
+			int value = var_domains[visit_order_vect[current_idx]][value_idx];
+			int constraint_nb = 0;
+			for (int var_idx = current_idx + 1; var_idx < var_nb; var_idx++)
+			{
+				for (auto other_value : var_domains[visit_order_vect[var_idx]])
+				{
+					if (checkConstraint(visit_order_vect[current_idx], visit_order_vect[var_idx], value, other_value))
+					{
+						constraint_nb++;
+					}
+				}
+			}
+			value_constraint_orders[value_idx] = make_pair(constraint_nb, value);
+		}
+		std::sort(value_constraint_orders.begin(), value_constraint_orders.end(), compare_pair_vector);
+
+		//cout << "Oui " << endl;
+		//for (auto value : value_constraint_orders)
+		//{
+		//	cout << "(" << value.first << "," << value.second << ") ";
+		//}
+		//cout << endl;
+		//cout << "Used var idx : " << current_idx << " and var " << visit_order_vect[current_idx] << endl;
+
+		for (int value_idx = 0; value_idx < var_domains[visit_order_vect[current_idx]].size(); value_idx++)
+		{
+			var_domains[visit_order_vect[current_idx]][value_idx] = value_constraint_orders[value_idx].second;
+		}
 	}
 }
 
@@ -559,6 +607,7 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> & visit_order_vect, int c
 	alterVisitOrder(visit_order_vect, var_idx);	
 	int explored_idx = var_idx + 1;
 	instantiated_vars[visit_order_vect[explored_idx]] = true;
+	alterDomainOrder(visit_order_vect, explored_idx);
 	vector<int> former_var_domain = var_domains[visit_order_vect[explored_idx]];
 	for (auto domain_value : former_var_domain)
 	{

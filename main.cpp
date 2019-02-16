@@ -33,10 +33,10 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int queen_nb = 35;
+		int queen_nb = 32;
 		pb_test.createQueenProblem(queen_nb);
-		//pb_test.createColorationProblem("Instances\\myciel7.col", 8);
-		//pb_test.createColorationProblem("Instances\\le450_5b.col", 9);
+		//pb_test.createColorationProblem("Instances\\myciel3.col", 3);
+		//pb_test.createColorationProblem("Instances\\le450_15b.col", 20);
 	}
 
 	vector<int> parameters_vect = readParameters("parameters.txt");
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 		cout << endl;
 		cout << endl;
 		cout << "Correct solution : ";
-		if (checkSolution(solution))
+		if (checkQueenSolution(solution))
 		{
 			cout << "Yes" << endl;
 		}
