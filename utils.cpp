@@ -36,6 +36,9 @@ vector<int> readParameters(string const & filename)
 	// Values constrained with more values from incoming variables : VA
 	file_reader >> readChar >> readChar >> readInt;
 	parameters.push_back(readInt);
+	// Handle symmetries : SY
+	file_reader >> readChar >> readChar >> readInt;
+	parameters.push_back(readInt);
 	return parameters;
 }
 

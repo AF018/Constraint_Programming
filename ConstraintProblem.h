@@ -16,6 +16,8 @@ class ConstraintProblem
 	vector<vector<bool> > constraints;
 	vector<vector<int> > constrained_vars;
 	// Parameters
+	string problem_type;
+	bool handling_symmetries;
 	bool half_arc_consistency;
 	bool arc_consistency_activated;
 	bool forward_check_activated;
@@ -44,7 +46,7 @@ public:
 	// Add values to the domains
 	void addValues(vector<pair<int, int> > const & values_to_add);
 	// Removes a value from the domain of a variable
-	void removeDomainValue(const  int & var_i, vector<int>::iterator const & value_i_it);
+	void removeDomainValue(const int & var_i, vector<int>::iterator const & value_i_it);
 
 	// Performs forward check
 	void forwardCheck(vector<pair<int, int> > & all_deleted_values, vector<int> part_inst, int const & var_idx);
@@ -55,6 +57,7 @@ public:
 	void AC4(vector<pair<int, int> > & ac_deleted_values);
 
 	// Modify the visit order
+	void handleSymmetries(vector<int> const & visit_order_vect);
 	void initialVisitOrder(vector<int> & visit_order_vect);
 	void alterVisitOrder(vector<int> & visit_order_vect, int const & current_idx);
 	void alterDomainOrder(vector<int> const & visit_order_vect, int const & current_idx);

@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int queen_nb = 32;
+		int queen_nb = 30;
 		pb_test.createQueenProblem(queen_nb);
-		//pb_test.createColorationProblem("Instances\\myciel3.col", 3);
+		//pb_test.createColorationProblem("Instances\\myciel5.col", 5);
 		//pb_test.createColorationProblem("Instances\\le450_15b.col", 20);
 	}
 

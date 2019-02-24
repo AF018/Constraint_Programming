@@ -15,6 +15,8 @@ ConstraintProblem::ConstraintProblem()
 	//constrained_vars = vector<bool>();
 	constrained_vars = vector<vector<int> >();
 	// Parameters
+	problem_type = "";
+	handling_symmetries = false;
 	half_arc_consistency = false;
 	arc_consistency_activated = false;
 	forward_check_activated = false;
@@ -33,6 +35,8 @@ ConstraintProblem::~ConstraintProblem()
 
 void ConstraintProblem::createQueenProblem(int const & n)
 {
+	problem_type = "queen";
+
 	var_nb = n;
 	domain_bound = n;
 	inconsistent_instantiation = false;
@@ -89,6 +93,8 @@ void ConstraintProblem::createQueenProblem(int const & n)
 
 void ConstraintProblem::createColorationProblem(string const & filename, int const & color_attempt_nb)
 {
+	problem_type = "color";
+
 	ifstream file_reader;
 	file_reader.open(filename);
 
@@ -194,6 +200,10 @@ void ConstraintProblem::applyParameters(vector<int> const & parameters_vect)
 	if (parameters_vect[6] == 1)
 	{
 		more_constrained_values = true;
+	}
+	if (parameters_vect[7] == 1)
+	{
+		handling_symmetries = true;
 	}
 
 	if (forward_check_activated && arc_consistency_activated)
@@ -374,6 +384,32 @@ void ConstraintProblem::AC4(vector<pair<int, int> > & all_deleted_values)
 	return;
 }
 
+void ConstraintProblem::handleSymmetries(vector<int> const & visit_order_vect)
+{
+	// WARNING : this function can be called if and only if the values in the domains have not been shuffled yet
+	// The order of visit of the variables has no importance though
+
+	if (handling_symmetries && problem_type == "queen")
+	{
+		// removing half of the values for the first variable
+		for (int pos_value = domain_bound-1; pos_value >= int(ceil(0.5*domain_bound)); pos_value--)
+		{
+			removeDomainValue(visit_order_vect[0], var_domains[visit_order_vect[0]].begin() + pos_value);
+		}
+	}
+	if (handling_symmetries && problem_type == "color")
+	{
+		// domain_bound is equal to the targeted coloration value
+		for (int idx = 0; idx < min(int(visit_order_vect.size()), domain_bound); idx++)
+		{
+			for (int color_value = domain_bound - 1; color_value > idx; color_value--)
+			{
+				removeDomainValue(visit_order_vect[idx], var_domains[visit_order_vect[idx]].begin() + color_value);
+			}
+		}
+	}
+}
+
 void ConstraintProblem::initialVisitOrder(vector<int>& visit_order_vect)
 {
 	if (random_visit_order)
@@ -390,13 +426,6 @@ void ConstraintProblem::alterVisitOrder(vector<int>& visit_order_vect, int const
 {
 	if (visit_small_domains)
 	{
-		//cout << "idx " << current_idx << "before order : ";
-		//for (auto it : visit_order_vect)
-		//{
-		//	cout << it << " ";
-		//}
-		//cout << endl;
-
 		int smallest_domain_idx = -1;
 		int smallest_domain_size = domain_bound+1;
 		for (int var_idx = current_idx + 1; var_idx < var_nb; var_idx++)
@@ -408,13 +437,6 @@ void ConstraintProblem::alterVisitOrder(vector<int>& visit_order_vect, int const
 			}
 		}
 		std::iter_swap(visit_order_vect.begin()+smallest_domain_idx, visit_order_vect.begin() + current_idx + 1);
-
-		//cout << "idx " << current_idx << "after  order : ";
-		//for (auto it : visit_order_vect)
-		//{
-		//	cout << it << " ";
-		//}
-		//cout << endl;
 	}
 	else if (visit_large_domains)
 	{
@@ -455,14 +477,6 @@ void ConstraintProblem::alterDomainOrder(vector<int> const & visit_order_vect, i
 		}
 		std::sort(value_constraint_orders.begin(), value_constraint_orders.end(), compare_pair_vector);
 
-		//cout << "Oui " << endl;
-		//for (auto value : value_constraint_orders)
-		//{
-		//	cout << "(" << value.first << "," << value.second << ") ";
-		//}
-		//cout << endl;
-		//cout << "Used var idx : " << current_idx << " and var " << visit_order_vect[current_idx] << endl;
-
 		for (int value_idx = 0; value_idx < var_domains[visit_order_vect[current_idx]].size(); value_idx++)
 		{
 			var_domains[visit_order_vect[current_idx]][value_idx] = value_constraint_orders[value_idx].second;
@@ -478,7 +492,28 @@ vector<int> ConstraintProblem::backtrackSolve()
 		visit_order_vect.push_back(idx);
 	}
 
+	handleSymmetries(visit_order_vect);
 	initialVisitOrder(visit_order_vect);
+
+	//cout << "visit  : ";
+	//for (auto it : visit_order_vect)
+	//{
+	//	cout << it << " ";
+	//}
+	//cout << endl;
+	//cout << "Affichage" << endl;
+	//int isz = 0;
+	//for (auto dma : var_domains)
+	//{
+	//	cout << isz << ": ";
+	//	for (auto val : dma)
+	//	{
+	//		cout << " " << val;
+	//	}
+	//	cout << endl;
+	//	isz++;
+	//}
+	//cout << "FINs" << endl;
 
 	vector<int> former_var_domain = var_domains[visit_order_vect[0]];
 	for (auto domain_value : former_var_domain)
@@ -487,20 +522,6 @@ vector<int> ConstraintProblem::backtrackSolve()
 		instantiated_vars[visit_order_vect[0]] = true;
 		vector<int> instantiation(var_nb, -1);
 		instantiation[visit_order_vect[0]] = domain_value;
-
-		//cout << "Affichage" << endl;
-		//int isz = 0;
-		//for (auto dma : var_domains)
-		//{
-		//	cout << isz << ": ";
-		//	for (auto val : dma)
-		//	{
-		//		cout << " " << val;
-		//	}
-		//	cout << endl;
-		//	isz++;
-		//}
-		//cout << "FINs" << endl;
 
 		if (recursiveBacktrack(visit_order_vect, 0, instantiation))
 		{
