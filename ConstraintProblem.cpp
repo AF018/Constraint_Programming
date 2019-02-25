@@ -397,7 +397,7 @@ void ConstraintProblem::handleSymmetries(vector<int> const & visit_order_vect)
 			removeDomainValue(visit_order_vect[0], var_domains[visit_order_vect[0]].begin() + pos_value);
 		}
 	}
-	if (handling_symmetries && problem_type == "color")
+	if (true && handling_symmetries && problem_type == "color")
 	{
 		// domain_bound is equal to the targeted coloration value
 		for (int idx = 0; idx < min(int(visit_order_vect.size()), domain_bound); idx++)
@@ -406,6 +406,53 @@ void ConstraintProblem::handleSymmetries(vector<int> const & visit_order_vect)
 			{
 				removeDomainValue(visit_order_vect[idx], var_domains[visit_order_vect[idx]].begin() + color_value);
 			}
+		}
+	}
+	if (false && handling_symmetries && problem_type == "color")
+	{
+		vector<int> appearance_counts(var_nb, 0);
+		int chosen_idx = -1;
+		for (int idx = 0; idx < min(int(visit_order_vect.size()), domain_bound); idx++)
+		{
+			if (idx == 0)
+			{
+				chosen_idx = (rand() % static_cast<int>(var_nb));
+			}
+			else
+			{
+				vector<int> potential_values;
+				int max_appearance = -1;
+				for (int var_idx = 0; var_idx < var_nb; var_idx++)
+				{
+					if (appearance_counts[var_idx] > max_appearance)
+					{
+						max_appearance = appearance_counts[var_idx];
+						potential_values = vector<int>(1, var_idx);
+					}
+					else if (appearance_counts[var_idx] == max_appearance)
+					{
+						potential_values.push_back(var_idx);
+					}
+				}
+				chosen_idx = potential_values[(rand() % potential_values.size())];
+
+			}
+			for (auto neighbor_var : constrained_vars[chosen_idx])
+			{
+				appearance_counts[neighbor_var] += 1;
+			}
+			appearance_counts[chosen_idx] = -var_nb;
+			for (int color_value = domain_bound - 1; color_value > idx; color_value--)
+			{
+				removeDomainValue(chosen_idx, var_domains[chosen_idx].begin() + color_value);
+			}
+
+			//cout << "wala" << endl;
+			//for (auto it : appearance_counts)
+			//{
+			//	cout << it << " ";
+			//}
+			//cout << endl;
 		}
 	}
 }
@@ -494,6 +541,7 @@ vector<int> ConstraintProblem::backtrackSolve()
 
 	handleSymmetries(visit_order_vect);
 	initialVisitOrder(visit_order_vect);
+	//alterVisitOrder(visit_order_vect, 0);
 
 	//cout << "visit  : ";
 	//for (auto it : visit_order_vect)

@@ -2,14 +2,9 @@
 Project for the constraint programming course at MPRO
 
 ## TODO
-Ordre de progression dans le backtrack : choix des variables, choix des valeurs (shuffle, plus grand domaine, etc ...)
-Faire appel a AC une fois une bonne partie des variables fixées
-
-Gestion des symétries
-
-## TO FIX
-Il y a un moyen d'effectuer le parcours des contraintes plus efficacement dans AC4 ?
-La récursion est peut etre moins efficace qu'un for/while loop
+Dans la gestion de symétrie pour la coloration, sélectionner des variables qui sont fortement contraintes entre elles et non des variables aléatoires<br>
+Vérifier la gestion des symétries de color<br>
+intéressant de lancer le small domain var dès la méthode backtrackSolve ?<br>
 
 ## Evolution du temps pour les reines
 07/02 (AC) : 20 en 1.15s, 25 en 1.476s, 30 en 5.909s, 32 en 31.013s, 40 prend trop de temps <br>

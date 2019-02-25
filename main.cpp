@@ -34,9 +34,11 @@ int main(int argc, char *argv[])
 	else
 	{
 		int queen_nb = 30;
-		pb_test.createQueenProblem(queen_nb);
+		//pb_test.createQueenProblem(queen_nb);
 		//pb_test.createColorationProblem("Instances\\myciel5.col", 5);
-		//pb_test.createColorationProblem("Instances\\le450_15b.col", 20);
+		//pb_test.createColorationProblem("Instances\\queen10_10.col", 9);
+		//pb_test.createColorationProblem("Instances\\jean.col", 9);
+		pb_test.createColorationProblem("Instances\\le450_15b.col", 15);
 	}
 
 	vector<int> parameters_vect = readParameters("parameters.txt");
