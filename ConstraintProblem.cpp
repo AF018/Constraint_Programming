@@ -483,7 +483,7 @@ void ConstraintProblem::alterVisitOrder(vector<int>& visit_order_vect, int const
 		int smallest_domain_size = domain_bound+1;
 		for (int var_idx = current_idx + 1; var_idx < var_nb; var_idx++)
 		{
-			if (var_domains[visit_order_vect[var_idx]].size() < smallest_domain_size)
+			if ((signed int)var_domains[visit_order_vect[var_idx]].size() < (signed int)smallest_domain_size)
 			{
 				smallest_domain_idx = var_idx;
 				smallest_domain_size = var_domains[visit_order_vect[var_idx]].size();
@@ -497,7 +497,7 @@ void ConstraintProblem::alterVisitOrder(vector<int>& visit_order_vect, int const
 		int largest_domain_size = -1;
 		for (int var_idx = current_idx + 1; var_idx < var_nb; var_idx++)
 		{
-			if (var_domains[visit_order_vect[var_idx]].size() > largest_domain_size)
+			if ((signed int)var_domains[visit_order_vect[var_idx]].size() > (signed int)largest_domain_size)
 			{
 				largest_domain_idx = var_idx;
 				largest_domain_size = var_domains[visit_order_vect[var_idx]].size();
@@ -512,7 +512,7 @@ void ConstraintProblem::alterDomainOrder(vector<int> const & visit_order_vect, i
 	if (more_constrained_values)
 	{
 		vector<pair<int, int> > value_constraint_orders = vector<pair<int, int> >(var_domains[visit_order_vect[current_idx]].size(), make_pair(0, 0));
-		for (int value_idx = 0; value_idx < var_domains[visit_order_vect[current_idx]].size(); value_idx++)
+		for (int value_idx = 0; value_idx < (signed int)var_domains[visit_order_vect[current_idx]].size(); value_idx++)
 		{
 			int value = var_domains[visit_order_vect[current_idx]][value_idx];
 			int constraint_nb = 0;
@@ -530,7 +530,7 @@ void ConstraintProblem::alterDomainOrder(vector<int> const & visit_order_vect, i
 		}
 		std::sort(value_constraint_orders.begin(), value_constraint_orders.end(), compare_pair_vector);
 
-		for (int value_idx = 0; value_idx < var_domains[visit_order_vect[current_idx]].size(); value_idx++)
+		for (int value_idx = 0; value_idx < (signed int)var_domains[visit_order_vect[current_idx]].size(); value_idx++)
 		{
 			var_domains[visit_order_vect[current_idx]][value_idx] = value_constraint_orders[value_idx].second;
 		}
