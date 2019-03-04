@@ -15,6 +15,7 @@ class ConstraintProblem
 	vector<vector<int> > var_domains;
 	vector<vector<bool> > constraints;
 	vector<vector<int> > constrained_vars;
+	int visited_nodes_nb;
 	// Parameters
 	string problem_type;
 	bool handling_symmetries;
@@ -33,6 +34,8 @@ public:
 	ConstraintProblem();
 	// Default destructor
 	virtual ~ConstraintProblem();
+	// Get the number of visited nodes
+	int getVisitedNodesNb() const;
 
 	// Creates a queen problem
 	void createQueenProblem(int const & n);

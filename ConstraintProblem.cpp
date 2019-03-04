@@ -12,6 +12,7 @@ ConstraintProblem::ConstraintProblem()
 	domain_bound = 0;
 	var_domains = vector<vector<int> >();
 	constraints = vector<vector<bool> >();
+	visited_nodes_nb = 0;
 	//constrained_vars = vector<bool>();
 	constrained_vars = vector<vector<int> >();
 	// Parameters
@@ -31,6 +32,11 @@ ConstraintProblem::ConstraintProblem()
 
 ConstraintProblem::~ConstraintProblem()
 {
+}
+
+int ConstraintProblem::getVisitedNodesNb() const
+{
+	return visited_nodes_nb;
 }
 
 void ConstraintProblem::createQueenProblem(int const & n)
@@ -533,6 +539,7 @@ void ConstraintProblem::alterDomainOrder(vector<int> const & visit_order_vect, i
 
 vector<int> ConstraintProblem::backtrackSolve()
 {
+	visited_nodes_nb = 0;
 	vector<int> visit_order_vect;
 	for (int idx = 0; idx < var_nb; idx++)
 	{
@@ -563,6 +570,7 @@ vector<int> ConstraintProblem::backtrackSolve()
 	//}
 	//cout << "FINs" << endl;
 
+	visited_nodes_nb++;
 	vector<int> former_var_domain = var_domains[visit_order_vect[0]];
 	for (auto domain_value : former_var_domain)
 	{
@@ -584,8 +592,8 @@ vector<int> ConstraintProblem::backtrackSolve()
 
 bool ConstraintProblem::recursiveBacktrack(vector<int> & visit_order_vect, int const & var_idx, vector<int> & partial_instantiation)
 {
+	visited_nodes_nb++;
 	// WARNING : pay attention to the var indices, different from the vect indices
-
 	if ((not arc_consistency_activated) and (not forward_check_activated))
 	{
 		// Checks if the partial instantiation is correct, more precisely if the last added value does not create conflicts

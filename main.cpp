@@ -15,12 +15,12 @@ int main(int argc, char *argv[])
 	start = std::clock();
 	if (argc > 1)
 	{
-		if (argv[1] == "queen")
+		if (string(argv[1]) == "queen")
 		{
 			int queen_nb = std::atoi(argv[2]);
 			pb_test.createQueenProblem(queen_nb);
 		}
-		else if (argv[1] == "color")
+		else if (string(argv[1]) == "color")
 		{
 			string filename(argv[2]);
 			int color_attempt_nb = (std::atoi(argv[3]));
@@ -33,14 +33,15 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int queen_nb = 30;
-		//pb_test.createQueenProblem(queen_nb);
+		int queen_nb = 25;
+		pb_test.createQueenProblem(queen_nb);
 		//pb_test.createColorationProblem("Instances\\myciel5.col", 5);
 		//pb_test.createColorationProblem("Instances\\queen10_10.col", 9);
 		//pb_test.createColorationProblem("Instances\\jean.col", 9);
-		pb_test.createColorationProblem("Instances\\le450_15b.col", 15);
+		//pb_test.createColorationProblem("Instances\\le450_15b.col", 15);
 	}
 
+	// Applying parameters found in parameters.txt for the optimization
 	vector<int> parameters_vect = readParameters("parameters.txt");
 	pb_test.applyParameters(parameters_vect);
 
@@ -54,6 +55,9 @@ int main(int argc, char *argv[])
 	cout << "Backtrack duration : " << duration << " seconds" << endl;;
 	cout << endl;
 
+	cout << "Visited nodes number : " << pb_test.getVisitedNodesNb() << endl;
+	cout << endl;
+
 	// Displaying the solution
 	if (solution.size() != 0)
 	{
@@ -63,8 +67,7 @@ int main(int argc, char *argv[])
 			cout << it << "  ";
 		}
 		cout << endl;
-		cout << endl;
-		cout << "Correct solution : ";
+		cout << "Correct solution (only works if it is a queen problem) : ";
 		if (checkQueenSolution(solution))
 		{
 			cout << "Yes" << endl;
