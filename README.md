@@ -1,17 +1,31 @@
 # Constraint_Programming
 Project for the constraint programming course at MPRO
 
-## TODO
-Dans la gestion de symétrie pour la coloration, sélectionner des variables qui sont fortement contraintes entre elles et non des variables aléatoires<br>
-Vérifier la gestion des symétries de color<br>
-intéressant de lancer le small domain var dès la méthode backtrackSolve ?<br>
+## Launch a resolution
 
-## Evolution du temps pour les reines
-07/02 (AC) : 20 en 1.15s, 25 en 1.476s, 30 en 5.909s, 32 en 31.013s, 40 prend trop de temps <br>
-09/02 (AC) : 20 en 0.433s, 25 en 0.507s, 30 en 1.768s, 32 en 9.985s, 35 en 5.038s, 40 en 29.241s, 45 en 100.16s <br>
-Correction d'un bug : régression des valeurs <br>
-10/02 (FC) : 20 en 0.02s, 25 en 0.153s, 30 en 0.23s, 32 en 8.127s, 35 en 43.954s, 40 en ? <br>
-Ajout d'un shuffle dans l'ordre de visite et les domaines<br>
-12/02 (FC+RV) : 20 en moins de 0.001s, 30 en 0.002s, 40 en moins de 0.01s, 100 en moins de 2s la plupart du temps, 200 en moins de 3s la plupart du temps, 300 en moins de 5s la moitié du temps, trop long dans les reste des cas<br>
-Visite des plus petits ou plus grands domaines en premier
-14/02 (FC+SD+RV) : 20 en 0.001s, 30 en 0.001s, 50 en 0.002s, 100 en 0.004s, 150 en 0.008s, 200 en 0.014s, 250 en 0.024s, 300 en 0.04s, 350 en 0.055s <br>
+With this code, you can solve two types of DECISION problems : Queens and Coloration on a graph.
+
+For the coloration problem, you need a `.col` file, the program in its current state can only read this kind.
+
+You can either run it by creating your instance in `main.cpp` (else loop around line 38) and compiling, or by creating the `.exe` (say for instance `lol.exe`) file and calling
+- For the queens problem :
+```
+./lol.exe queen NUMBER_OF_QUEENS
+```
+- For the coloration problem :
+```
+./lol.exe color PATH_TO_THE_COL_FILE COLORATION_NUMBER_TO_TRY
+```
+Make sure to check that `parameters.txt` is in the same directory as your executable or else it will crash. And you don't want that.
+
+For each run, you can use different options, activated through the file `parameters.txt`. The options correspond to the following :
+```
+AC : Use the AC4 algorithm to maintain arc consistency at each node of the search tree
+FC : Use forward checking at each node of the search tree, cannot be combined with the arc consistency because of redanduncy
+RV : Shuffle the order of visit for the variables and each variable domain before doing the run
+SD : Visit first the variables with the smallest domains when going through the search tree
+LD : Visit first the variables with the largest domains when going through the search tree
+HA : Maintain arc consistency but only half the time to reduce the computation cost
+VA : Choose to use values constrained with more values from variables that haven't been fixed yet
+SY : Use symmetries to simplify problems (works for both the queens problem and the coloration)
+```
