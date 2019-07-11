@@ -13,7 +13,6 @@ ConstraintProblem::ConstraintProblem()
 	var_domains = vector<vector<int> >();
 	constraints = vector<vector<bool> >();
 	visited_nodes_nb = 0;
-	//constrained_vars = vector<bool>();
 	constrained_vars = vector<vector<int> >();
 	// Parameters
 	problem_type = "";
@@ -246,7 +245,6 @@ void ConstraintProblem::addValues(vector<pair<int, int>> const & values_to_add)
 
 void ConstraintProblem::removeDomainValue(const int & var_i, vector<int>::iterator const & value_i_it)
 {
-	//var_domains[var_i].erase(value_i_it);
 	vector<int>::iterator back_it = std::prev(var_domains[var_i].end());
 	std::iter_swap(value_i_it, back_it);
 	var_domains[var_i].pop_back();
@@ -271,10 +269,8 @@ void ConstraintProblem::forwardCheck(vector<pair<int, int>> & all_deleted_values
 				for (vector<int>::iterator value_j_it = var_domains[var_j].begin();
 					value_j_it != var_domains[var_j].end(); value_j_it++)
 				{
-					//cout << " " << var_i << " " << var_j << " " << var_domains[var_j].size() << endl;
 					if (not checkConstraint(var_i, var_j, value_i, *value_j_it))
 					{
-						//cout << "  " << var_i << " " << value_i << " " << var_j << " " << *value_j_it << endl;
 						all_deleted_values.push_back(std::make_pair(var_j, *value_j_it));
 						removeDomainValue(var_j, value_j_it);
 						value_j_it--;
@@ -380,7 +376,6 @@ void ConstraintProblem::AC4(vector<pair<int, int> > & all_deleted_values)
 							inconsistent_instantiation = true;
 							return;
 						}
-						//cout << "Deleted value with propagation " << paired_value.first << "," << paired_value.second << endl;
 					}
 				}
 			}
@@ -452,13 +447,6 @@ void ConstraintProblem::handleSymmetries(vector<int> const & visit_order_vect)
 			{
 				removeDomainValue(chosen_idx, var_domains[chosen_idx].begin() + color_value);
 			}
-
-			//cout << "wala" << endl;
-			//for (auto it : appearance_counts)
-			//{
-			//	cout << it << " ";
-			//}
-			//cout << endl;
 		}
 	}
 }
@@ -550,26 +538,6 @@ vector<int> ConstraintProblem::backtrackSolve()
 	initialVisitOrder(visit_order_vect);
 	//alterVisitOrder(visit_order_vect, 0);
 
-	//cout << "visit  : ";
-	//for (auto it : visit_order_vect)
-	//{
-	//	cout << it << " ";
-	//}
-	//cout << endl;
-	//cout << "Affichage" << endl;
-	//int isz = 0;
-	//for (auto dma : var_domains)
-	//{
-	//	cout << isz << ": ";
-	//	for (auto val : dma)
-	//	{
-	//		cout << " " << val;
-	//	}
-	//	cout << endl;
-	//	isz++;
-	//}
-	//cout << "FINs" << endl;
-
 	visited_nodes_nb++;
 	vector<int> former_var_domain = var_domains[visit_order_vect[0]];
 	for (auto domain_value : former_var_domain)
@@ -593,7 +561,7 @@ vector<int> ConstraintProblem::backtrackSolve()
 bool ConstraintProblem::recursiveBacktrack(vector<int> & visit_order_vect, int const & var_idx, vector<int> & partial_instantiation)
 {
 	visited_nodes_nb++;
-	// WARNING : pay attention to the var indices, different from the vect indices
+
 	if ((not arc_consistency_activated) and (not forward_check_activated))
 	{
 		// Checks if the partial instantiation is correct, more precisely if the last added value does not create conflicts
@@ -612,33 +580,12 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> & visit_order_vect, int c
 			}
 		}
 	}
-	//cout << "Exploring var idx " << var_idx << " with value " << partial_instantiation.back() << endl;
-
-	/*
-	cout << "values : ";
-	for (auto it : partial_instantiation)
-	{
-		cout << it << "  ";
-	}
-	cout << endl;
-	*/
 
 	// If the constraints are all satisfied and all variables have been assigned values
 	if (var_idx + 1 == var_nb)
 	{
 		return true;
 	}
-
-	//for (int idx_1 = 0; idx_1 < var_domains.size(); idx_1++)
-	//{
-	//	cout << "befor domain var " << idx_1 << " : ";
-	//	for (auto it_2 : var_domains[idx_1])
-	//	{
-	//		cout << it_2 << "  ";
-	//	}
-	//	cout << endl;
-	//}
-	//cout << endl;
 
 	vector<pair<int, int> > ac_deleted_values;
 
@@ -663,23 +610,6 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> & visit_order_vect, int c
 		}
 	}
 
-	//for (int idx_1=0; idx_1<var_domains.size(); idx_1++)
-	//{
-	//	cout << "after domain var " << idx_1 << " : ";
-	//	for (auto it_2 : var_domains[idx_1])
-	//	{
-	//		cout << it_2 << "  ";
-	//	}
-	//	cout << endl;
-	//}
-
-	//cout << "pairs ";
-	//for (auto pair : ac_deleted_values)
-	//{
-	//	cout << "(" << pair.first << ',' << pair.second << ") ";
-	//}
-	//cout << endl;
-
 	// Trying to assign the next variable
 	alterVisitOrder(visit_order_vect, var_idx);	
 	int explored_idx = var_idx + 1;
@@ -701,13 +631,7 @@ bool ConstraintProblem::recursiveBacktrack(vector<int> & visit_order_vect, int c
 			partial_instantiation[visit_order_vect[explored_idx]] = -1;
 		}
 	}
-	//cout << "Var " << explored_idx << " not working, going back" << endl;
-	//cout << "Adding : ";
-	//for (auto pair : ac_deleted_values)
-	//{
-	//	cout << "(" << pair.first << ',' << pair.second << ") ";
-	//}
-	//cout << endl;
+	
 	var_domains[visit_order_vect[explored_idx]] = former_var_domain;
 	addValues(ac_deleted_values);
 	instantiated_vars[visit_order_vect[explored_idx]] = false;
